@@ -29,9 +29,21 @@ type DevLoginInput = {
   usernameOrEmail?: unknown;
 };
 
+type ProfileUpdateInput = {
+  currentRoomId?: unknown;
+  selectedAvatarIds?: unknown;
+  sessionId?: unknown;
+};
+
+export type KokoroeProfile = {
+  currentRoomId: string;
+  selectedAvatarIds: Record<string, string>;
+};
+
 export type KokoroeUser = {
   id: string;
   displayName: string;
+  profile: KokoroeProfile;
   createdAt: string;
   updatedAt: string;
 };
@@ -65,6 +77,15 @@ function createSeedStore(): StoreState {
     users: [],
     sessions: [],
     messages: [...startingMessages],
+  };
+}
+
+function createDefaultProfile(): KokoroeProfile {
+  return {
+    currentRoomId: rooms[0].id,
+    selectedAvatarIds: Object.fromEntries(
+      rooms.map((room) => [room.id, avatarsByRoom[room.id]?.[0]?.id ?? ""]),
+    ),
   };
 }
 
@@ -126,7 +147,41 @@ async function readStoreFromDisk() {
 
 async function getStore() {
   globalStore.__kokoroeStore ??= await readStoreFromDisk();
+  let didMigrate = false;
+
+  for (const user of globalStore.__kokoroeStore.users) {
+    if (!(user as Partial<KokoroeUser>).profile) {
+      user.profile = createDefaultProfile();
+      didMigrate = true;
+    }
+  }
+
+  if (didMigrate) {
+    await persistStore(globalStore.__kokoroeStore);
+  }
+
   return globalStore.__kokoroeStore;
+}
+
+async function getSessionUser(sessionId: unknown) {
+  if (typeof sessionId !== "string" || !sessionId.trim()) {
+    return { error: "sessionId is required.", status: 400 } as const;
+  }
+
+  const store = await getStore();
+  const session = store.sessions.find((candidateSession) => candidateSession.id === sessionId.trim());
+
+  if (!session) {
+    return { error: "Session not found.", status: 404 } as const;
+  }
+
+  const user = store.users.find((candidateUser) => candidateUser.id === session.userId);
+
+  if (!user) {
+    return { error: "Session user not found.", status: 404 } as const;
+  }
+
+  return { store, session, user, status: 200 } as const;
 }
 
 export function getRoomsPayload() {
@@ -156,6 +211,7 @@ export async function createDevSession(input: DevLoginInput) {
     ({
       id: `user-${randomUUID()}`,
       displayName,
+      profile: createDefaultProfile(),
       createdAt: now,
       updatedAt: now,
     } satisfies KokoroeUser);
@@ -181,27 +237,63 @@ export async function createDevSession(input: DevLoginInput) {
 }
 
 export async function getDevSession(sessionId: unknown) {
-  if (typeof sessionId !== "string" || !sessionId.trim()) {
-    return { error: "sessionId is required.", status: 400 } as const;
+  const result = await getSessionUser(sessionId);
+
+  if ("error" in result) {
+    return result;
   }
 
-  const store = await getStore();
-  const session = store.sessions.find((candidateSession) => candidateSession.id === sessionId.trim());
-
-  if (!session) {
-    return { error: "Session not found.", status: 404 } as const;
-  }
-
-  const user = store.users.find((candidateUser) => candidateUser.id === session.userId);
-
-  if (!user) {
-    return { error: "Session user not found.", status: 404 } as const;
-  }
-
+  const { session, store, user } = result;
   session.lastSeenAt = new Date().toISOString();
   await persistStore(store);
 
   return { user, session, status: 200 } as const;
+}
+
+export async function updateProfile(input: ProfileUpdateInput) {
+  const result = await getSessionUser(input.sessionId);
+
+  if (result.status !== 200) {
+    return result;
+  }
+
+  const { store, user } = result;
+  const nextProfile: KokoroeProfile = {
+    currentRoomId: user.profile.currentRoomId,
+    selectedAvatarIds: { ...user.profile.selectedAvatarIds },
+  };
+
+  if (typeof input.currentRoomId === "string") {
+    const room = rooms.find((candidateRoom) => candidateRoom.id === input.currentRoomId);
+
+    if (!room) {
+      return { error: `Unknown room "${input.currentRoomId}".`, status: 404 } as const;
+    }
+
+    nextProfile.currentRoomId = room.id;
+  }
+
+  if (input.selectedAvatarIds && typeof input.selectedAvatarIds === "object" && !Array.isArray(input.selectedAvatarIds)) {
+    for (const [roomId, avatarId] of Object.entries(input.selectedAvatarIds)) {
+      if (typeof avatarId !== "string") {
+        return { error: `Invalid avatar selection for room "${roomId}".`, status: 400 } as const;
+      }
+
+      const avatar = avatarsByRoom[roomId]?.find((candidateAvatar) => candidateAvatar.id === avatarId);
+
+      if (!avatar) {
+        return { error: `Unknown avatar "${avatarId}" for room "${roomId}".`, status: 404 } as const;
+      }
+
+      nextProfile.selectedAvatarIds[roomId] = avatar.id;
+    }
+  }
+
+  user.profile = nextProfile;
+  user.updatedAt = new Date().toISOString();
+  await persistStore(store);
+
+  return { profile: user.profile, user, status: 200 } as const;
 }
 
 export async function createMessage(input: MessageCreateInput) {

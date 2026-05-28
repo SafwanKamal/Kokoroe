@@ -19,9 +19,12 @@ Continue work in `/Users/safwankamal/Desktop/Code/Kokoroe`. Read `AGENTS.md` and
   - `POST /api/messages`
   - `POST /api/auth/login`
   - `GET /api/auth/session?sessionId=<session-id>`
+  - `GET /api/profile?sessionId=<session-id>`
+  - `PATCH /api/profile`
 - These routes currently use the existing seed/catalog data and a local `.data/kokoroe-dev-store.json` file. Treat this as the API contract and development bridge before adding durable database persistence and real authentication.
 - Auth routes create development sessions only. They do not verify or store passwords yet.
 - The frontend login and chat composer now use the API layer. Login creates a dev session, room messages are loaded through `GET /api/messages`, and sent lines go through `POST /api/messages`.
+- The frontend profile state is also API-backed: selected room and per-world avatar selections are stored on the dev user profile.
 
 ## Current Design State
 

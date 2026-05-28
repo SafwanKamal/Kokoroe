@@ -121,6 +121,8 @@ Authentication endpoints may create development sessions, but they must not clai
 
 The browser app should consume the backend API even while the backend is still local-development grade. Avoid reintroducing separate frontend-only message stores once an API contract exists.
 
+World-scoped avatar memory belongs in the user profile contract. The frontend may optimistically update selections, but the selected room and per-room avatar ids should be persisted through the backend so refreshing the app does not collapse every world back to the first avatar.
+
 ## Concept Art
 
 Curated concept art should guide implementation.

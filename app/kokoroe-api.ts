@@ -1,5 +1,5 @@
 import type { ChatMessage } from "./chat-data";
-import type { KokoroeSession, KokoroeUser } from "./kokoroe-store";
+import type { KokoroeProfile, KokoroeSession, KokoroeUser } from "./kokoroe-store";
 import type { MessagePresentationId } from "./message-presentations";
 
 type ApiErrorPayload = {
@@ -17,6 +17,11 @@ type LoginResponse = {
   session: KokoroeSession;
 };
 
+type ProfileResponse = {
+  profile: KokoroeProfile;
+  user?: KokoroeUser;
+};
+
 type MessagesResponse = {
   messages: ChatMessage[];
 };
@@ -31,6 +36,12 @@ type MessageCreatePayload = {
 
 type MessageCreateResponse = {
   message: ChatMessage;
+};
+
+type ProfilePatchPayload = {
+  currentRoomId?: string;
+  selectedAvatarIds?: Record<string, string>;
+  sessionId: string;
 };
 
 async function readApiJson<T>(response: Response) {
@@ -57,6 +68,22 @@ export async function fetchRoomMessages(roomId: string) {
   const response = await fetch(`/api/messages?roomId=${encodeURIComponent(roomId)}`);
   const payload = await readApiJson<MessagesResponse>(response);
   return payload.messages;
+}
+
+export async function fetchProfile(sessionId: string) {
+  const response = await fetch(`/api/profile?sessionId=${encodeURIComponent(sessionId)}`);
+  const payload = await readApiJson<ProfileResponse>(response);
+  return payload.profile;
+}
+
+export async function patchProfile(payload: ProfilePatchPayload) {
+  const response = await fetch("/api/profile", {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const result = await readApiJson<ProfileResponse>(response);
+  return result.profile;
 }
 
 export async function postRoomMessage(payload: MessageCreatePayload) {

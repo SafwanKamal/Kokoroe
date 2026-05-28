@@ -9,7 +9,7 @@ import {
   rooms,
   type ChatMessage,
 } from "./chat-data";
-import { createLoginSession, fetchRoomMessages, postRoomMessage } from "./kokoroe-api";
+import { createLoginSession, fetchProfile, fetchRoomMessages, patchProfile, postRoomMessage } from "./kokoroe-api";
 import {
   getBubbleFrameStyle,
   getRandomPresentationId,
@@ -106,6 +106,14 @@ export default function Home() {
 
   const activeLoginArt = loginSceneArts[loginArtIndex];
 
+  function applyProfile(profile: { currentRoomId: string; selectedAvatarIds: Record<string, string> }) {
+    setSelectedRoomId(profile.currentRoomId);
+    setSelectedAvatarIds((currentSelections) => ({
+      ...currentSelections,
+      ...profile.selectedAvatarIds,
+    }));
+  }
+
   async function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setApiError("");
@@ -120,6 +128,7 @@ export default function Home() {
 
       setDisplayName(result.user.displayName);
       setSessionId(result.session.id);
+      applyProfile(result.user.profile);
       setAppStep("scene");
     } catch (error) {
       setApiError(error instanceof Error ? error.message : "Login failed.");
@@ -131,11 +140,13 @@ export default function Home() {
   function chooseRoom(roomId: string) {
     setRevealedProfileMessageId(null);
     setSelectedRoomId(roomId);
+    void saveProfile({ currentRoomId: roomId });
   }
 
   function chooseRoomFromChat(roomId: string) {
     setRevealedProfileMessageId(null);
     setSelectedRoomId(roomId);
+    void saveProfile({ currentRoomId: roomId });
   }
 
   function chooseAvatar(avatarId: string) {
@@ -143,6 +154,20 @@ export default function Home() {
       ...currentSelections,
       [selectedRoom.id]: avatarId,
     }));
+    void saveProfile({ selectedAvatarIds: { [selectedRoom.id]: avatarId } });
+  }
+
+  async function saveProfile(update: { currentRoomId?: string; selectedAvatarIds?: Record<string, string> }) {
+    if (!sessionId) {
+      return;
+    }
+
+    try {
+      const profile = await patchProfile({ sessionId, ...update });
+      applyProfile(profile);
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "Profile failed to save.");
+    }
   }
 
   function enterChatWithAvatar() {
@@ -246,6 +271,30 @@ export default function Home() {
       isCurrent = false;
     };
   }, [selectedRoom.id]);
+
+  useEffect(() => {
+    if (!sessionId) {
+      return;
+    }
+
+    let isCurrent = true;
+
+    fetchProfile(sessionId)
+      .then((profile) => {
+        if (isCurrent) {
+          applyProfile(profile);
+        }
+      })
+      .catch((error) => {
+        if (isCurrent) {
+          setApiError(error instanceof Error ? error.message : "Could not load profile.");
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [sessionId]);
 
   useEffect(() => {
     if (appStep !== "login") {
