@@ -115,7 +115,9 @@ Avoid randomness that harms usability:
 
 ## Backend Direction
 
-Build the backend behind narrow typed API contracts before moving more UI behavior around. The first backend layer lives in Next.js route handlers and exposes room/avatar catalog data plus message reads/writes. Keep persistence swappable: the current in-memory store is a development bridge, not the long-term data model.
+Build the backend behind narrow typed API contracts before moving more UI behavior around. The first backend layer lives in Next.js route handlers and exposes room/avatar catalog data plus message reads/writes. Keep persistence swappable: the current `.data/kokoroe-dev-store.json` store is a local development bridge, not the long-term data model.
+
+Authentication endpoints may create development sessions, but they must not claim to verify real passwords until production auth is implemented. Do not store password-like values in the dev store.
 
 ## Concept Art
 

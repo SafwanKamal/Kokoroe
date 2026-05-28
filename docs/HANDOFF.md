@@ -17,7 +17,10 @@ Continue work in `/Users/safwankamal/Desktop/Code/Kokoroe`. Read `AGENTS.md` and
   - `GET /api/rooms`
   - `GET /api/messages?roomId=<room-id>`
   - `POST /api/messages`
-- These routes currently use the existing seed/catalog data and an in-memory message store. Treat this as the API contract and development bridge before adding durable persistence and real authentication.
+  - `POST /api/auth/login`
+  - `GET /api/auth/session?sessionId=<session-id>`
+- These routes currently use the existing seed/catalog data and a local `.data/kokoroe-dev-store.json` file. Treat this as the API contract and development bridge before adding durable database persistence and real authentication.
+- Auth routes create development sessions only. They do not verify or store passwords yet.
 
 ## Current Design State
 

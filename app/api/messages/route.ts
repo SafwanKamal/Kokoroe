@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMessage, getMessages } from "../../kokoroe-store";
 
-export function GET(request: NextRequest) {
+export async function GET(request: NextRequest) {
   const roomId = request.nextUrl.searchParams.get("roomId") ?? undefined;
 
-  return NextResponse.json({ messages: getMessages(roomId) });
+  return NextResponse.json({ messages: await getMessages(roomId) });
 }
 
 export async function POST(request: NextRequest) {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Request body must be an object." }, { status: 400 });
   }
 
-  const result = createMessage(body);
+  const result = await createMessage(body);
 
   if ("error" in result) {
     return NextResponse.json({ error: result.error }, { status: result.status });
