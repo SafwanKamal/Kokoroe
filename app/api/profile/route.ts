@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDevSession, updateProfile } from "../../kokoroe-store";
+import { getDevSession, getPublicUser, updateProfile } from "../../kokoroe-store";
 
 export async function GET(request: NextRequest) {
   const result = await getDevSession(request.nextUrl.searchParams.get("sessionId"));
@@ -30,5 +30,5 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  return NextResponse.json({ profile: result.profile, user: result.user }, { status: result.status });
+  return NextResponse.json({ profile: result.profile, user: getPublicUser(result.user) }, { status: result.status });
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createDevSession, getPublicUser } from "../../../kokoroe-store";
+import { createAccount, getPublicUser } from "../../../kokoroe-store";
 
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Request body must be an object." }, { status: 400 });
   }
 
-  const result = await createDevSession(body);
+  const result = await createAccount(body);
 
   if ("error" in result) {
     return NextResponse.json({ error: result.error }, { status: result.status });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDevSession } from "../../../kokoroe-store";
+import { getDevSession, getPublicUser } from "../../../kokoroe-store";
 
 export async function GET(request: NextRequest) {
   const result = await getDevSession(request.nextUrl.searchParams.get("sessionId"));
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(
     {
       mode: "development",
-      user: result.user,
+      user: getPublicUser(result.user),
       session: result.session,
     },
     { status: result.status },

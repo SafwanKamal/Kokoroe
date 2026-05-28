@@ -1,5 +1,5 @@
 import type { ChatMessage } from "./chat-data";
-import type { KokoroeProfile, KokoroeSession, KokoroeUser } from "./kokoroe-store";
+import type { KokoroeProfile, KokoroePublicUser, KokoroeSession } from "./kokoroe-store";
 import type { MessagePresentationId } from "./message-presentations";
 
 type ApiErrorPayload = {
@@ -8,18 +8,19 @@ type ApiErrorPayload = {
 
 type LoginPayload = {
   displayName?: string;
+  password?: string;
   usernameOrEmail?: string;
 };
 
 type LoginResponse = {
   mode: "development";
-  user: KokoroeUser;
+  user: KokoroePublicUser;
   session: KokoroeSession;
 };
 
 type ProfileResponse = {
   profile: KokoroeProfile;
-  user?: KokoroeUser;
+  user?: KokoroePublicUser;
 };
 
 type MessagesResponse = {
@@ -56,6 +57,16 @@ async function readApiJson<T>(response: Response) {
 
 export async function createLoginSession(payload: LoginPayload) {
   const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  return readApiJson<LoginResponse>(response);
+}
+
+export async function createAccountSession(payload: LoginPayload) {
+  const response = await fetch("/api/auth/register", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(payload),

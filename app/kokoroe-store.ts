@@ -1,6 +1,7 @@
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 import {
   avatarsByRoom,
   rooms,
@@ -24,6 +25,7 @@ type MessageCreateInput = {
 
 type DevLoginInput = {
   displayName?: unknown;
+  password?: unknown;
   username?: unknown;
   usernameOrEmail?: unknown;
 };
@@ -42,10 +44,16 @@ export type KokoroeProfile = {
 export type KokoroeUser = {
   id: string;
   displayName: string;
+  email?: string;
+  passwordHash?: string;
+  passwordSalt?: string;
   profile: KokoroeProfile;
+  username?: string;
   createdAt: string;
   updatedAt: string;
 };
+
+export type KokoroePublicUser = Omit<KokoroeUser, "passwordHash" | "passwordSalt">;
 
 export type KokoroeSession = {
   id: string;
@@ -64,6 +72,8 @@ type StoreState = {
 
 const dataDirectory = path.join(process.cwd(), ".data");
 const storePath = path.join(dataDirectory, "kokoroe-dev-store.json");
+const hashLength = 64;
+const scrypt = promisify(scryptCallback);
 const globalStore = globalThis as typeof globalThis & {
   __kokoroeStore?: StoreState;
   __kokoroeWriteQueue?: Promise<void>;
@@ -132,6 +142,44 @@ function getLoginName(input: DevLoginInput) {
   return trimmed.slice(0, 40);
 }
 
+function getCredentialIdentifier(input: DevLoginInput) {
+  const rawIdentifier = input.usernameOrEmail ?? input.username ?? input.displayName;
+
+  if (typeof rawIdentifier !== "string" || !rawIdentifier.trim()) {
+    return undefined;
+  }
+
+  return rawIdentifier.trim().toLowerCase();
+}
+
+function getPassword(input: DevLoginInput) {
+  if (typeof input.password !== "string") {
+    return undefined;
+  }
+
+  return input.password;
+}
+
+function getUserHandle(identifier: string) {
+  return identifier.includes("@") ? identifier.split("@")[0] : identifier;
+}
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const hashBuffer = (await scrypt(password, salt, hashLength)) as Buffer;
+  return {
+    passwordHash: hashBuffer.toString("hex"),
+    passwordSalt: salt,
+  };
+}
+
+async function verifyPassword(password: string, passwordHash: string, passwordSalt: string) {
+  const expected = Buffer.from(passwordHash, "hex");
+  const actual = (await scrypt(password, passwordSalt, expected.length)) as Buffer;
+
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
 async function persistStore(store: StoreState) {
   const payload = `${JSON.stringify(store, null, 2)}\n`;
   const tempPath = `${storePath}.tmp`;
@@ -178,6 +226,27 @@ async function getStore() {
   return globalStore.__kokoroeStore;
 }
 
+function findUserByCredential(store: StoreState, identifier: string) {
+  const normalizedIdentifier = identifier.toLowerCase();
+
+  return store.users.find((user) => (
+    user.username?.toLowerCase() === normalizedIdentifier ||
+    user.email?.toLowerCase() === normalizedIdentifier ||
+    user.displayName.toLowerCase() === normalizedIdentifier
+  ));
+}
+
+function createSession(userId: string): KokoroeSession {
+  const now = new Date().toISOString();
+
+  return {
+    id: `session-${randomUUID()}`,
+    userId,
+    createdAt: now,
+    lastSeenAt: now,
+  };
+}
+
 async function getSessionUser(sessionId: unknown) {
   if (typeof sessionId !== "string" || !sessionId.trim()) {
     return { error: "sessionId is required.", status: 400 } as const;
@@ -206,6 +275,11 @@ export function getRoomsPayload() {
   };
 }
 
+export function getPublicUser(user: KokoroeUser): KokoroePublicUser {
+  const { passwordHash: _passwordHash, passwordSalt: _passwordSalt, ...publicUser } = user;
+  return publicUser;
+}
+
 export async function getMessages(roomId?: string) {
   const messages = (await getStore()).messages;
 
@@ -224,33 +298,79 @@ export async function getMessages(roomId?: string) {
 
 export async function createDevSession(input: DevLoginInput) {
   const now = new Date().toISOString();
-  const displayName = getLoginName(input);
-  const store = await getStore();
-  const existingUser = store.users.find((user) => user.displayName.toLowerCase() === displayName.toLowerCase());
-  const user =
-    existingUser ??
-    ({
-      id: `user-${randomUUID()}`,
-      displayName,
-      profile: createDefaultProfile(),
-      createdAt: now,
-      updatedAt: now,
-    } satisfies KokoroeUser);
+  const identifier = getCredentialIdentifier(input);
+  const password = getPassword(input);
 
-  if (existingUser) {
-    existingUser.displayName = displayName;
-    existingUser.updatedAt = now;
-  } else {
-    store.users.push(user);
+  if (!identifier) {
+    return { error: "Username or email is required.", status: 400 } as const;
   }
 
-  const session: KokoroeSession = {
-    id: `session-${randomUUID()}`,
-    userId: user.id,
-    createdAt: now,
-    lastSeenAt: now,
-  };
+  if (!password) {
+    return { error: "Password is required.", status: 400 } as const;
+  }
 
+  const store = await getStore();
+  const user = findUserByCredential(store, identifier);
+
+  if (!user || !user.passwordHash || !user.passwordSalt) {
+    return { error: "Account not found. Create an account first.", status: 404 } as const;
+  }
+
+  const isPasswordValid = await verifyPassword(password, user.passwordHash, user.passwordSalt);
+
+  if (!isPasswordValid) {
+    return { error: "Password is incorrect.", status: 401 } as const;
+  }
+
+  user.updatedAt = now;
+  const session = createSession(user.id);
+  store.sessions.push(session);
+  await persistStore(store);
+
+  return { user, session, status: 201 } as const;
+}
+
+export async function createAccount(input: DevLoginInput) {
+  const now = new Date().toISOString();
+  const identifier = getCredentialIdentifier(input);
+  const password = getPassword(input);
+
+  if (!identifier) {
+    return { error: "Username or email is required.", status: 400 } as const;
+  }
+
+  if (!password || password.length < 8) {
+    return { error: "Password must be at least 8 characters.", status: 400 } as const;
+  }
+
+  const store = await getStore();
+  const existingUser = findUserByCredential(store, identifier);
+
+  if (existingUser) {
+    return { error: "That account already exists. Log in instead.", status: 409 } as const;
+  }
+
+  const passwordFields = await hashPassword(password);
+  const displayName = getLoginName({
+    ...input,
+    displayName: typeof input.displayName === "string" && input.displayName.trim()
+      ? input.displayName
+      : getUserHandle(identifier),
+  });
+  const user: KokoroeUser = {
+    id: `user-${randomUUID()}`,
+    displayName,
+    email: identifier.includes("@") ? identifier : undefined,
+    passwordHash: passwordFields.passwordHash,
+    passwordSalt: passwordFields.passwordSalt,
+    profile: createDefaultProfile(),
+    username: identifier.includes("@") ? getUserHandle(identifier) : identifier,
+    createdAt: now,
+    updatedAt: now,
+  };
+  const session = createSession(user.id);
+
+  store.users.push(user);
   store.sessions.push(session);
   await persistStore(store);
 

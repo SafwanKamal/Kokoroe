@@ -9,7 +9,7 @@ import {
   rooms,
   type ChatMessage,
 } from "./chat-data";
-import { createLoginSession, fetchProfile, fetchRoomMessages, patchProfile, postRoomMessage } from "./kokoroe-api";
+import { createAccountSession, createLoginSession, fetchProfile, fetchRoomMessages, patchProfile, postRoomMessage } from "./kokoroe-api";
 import {
   getBubbleFrameStyle,
   getRandomPresentationId,
@@ -19,6 +19,7 @@ import {
 } from "./message-presentations";
 
 type AppStep = "login" | "scene" | "chat";
+type AuthMode = "login" | "create";
 
 const screenMotion = {
   initial: { opacity: 0, y: 22, scale: 0.985, rotate: -0.35 },
@@ -80,7 +81,9 @@ export default function Home() {
   const [selectedRoomId, setSelectedRoomId] = useState(rooms[0].id);
   const [selectedAvatarIds, setSelectedAvatarIds] = useState<Record<string, string>>(initialAvatarSelections);
   const [loginArtIndex, setLoginArtIndex] = useState(0);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [displayName, setDisplayName] = useState("");
+  const [password, setPassword] = useState("");
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | undefined>();
@@ -121,8 +124,10 @@ export default function Home() {
 
     try {
       const name = displayName.trim();
-      const result = await createLoginSession({
+      const authenticate = authMode === "create" ? createAccountSession : createLoginSession;
+      const result = await authenticate({
         displayName: name || undefined,
+        password,
         usernameOrEmail: name || undefined,
       });
 
@@ -172,6 +177,12 @@ export default function Home() {
 
   function enterChatWithAvatar() {
     setAppStep("chat");
+  }
+
+  function returnToLogin() {
+    setApiError("");
+    setAuthMode("login");
+    setAppStep("login");
   }
 
   async function sendLine(event: FormEvent<HTMLFormElement>) {
@@ -559,7 +570,7 @@ export default function Home() {
 
             <form className="entry-form login-form" onSubmit={submitLogin}>
               <div className="login-welcome">
-                <strong>Welcome back!</strong>
+                <strong>{authMode === "create" ? "Start your arc!" : "Welcome back!"}</strong>
               </div>
 
               <label>
@@ -572,23 +583,43 @@ export default function Home() {
               </label>
               <label>
                 Password
-                <input type="password" placeholder="Password" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder={authMode === "create" ? "Password (8+ characters)" : "Password"}
+                />
               </label>
-              <a className="forgot-link" href="#login">
-                Forgot password?
-              </a>
+              {authMode === "login" ? (
+                <a className="forgot-link" href="#login">
+                  Forgot password?
+                </a>
+              ) : null}
 
               {apiError ? <div className="api-status" data-tone="error">{apiError}</div> : null}
 
               <button className="enter-button login-enter" disabled={isLoggingIn} type="submit">
-                {isLoggingIn ? "Opening portal..." : "Get Isekaied →"}
+                {isLoggingIn
+                  ? "Opening portal..."
+                  : authMode === "create"
+                    ? "Create account →"
+                    : "Get Isekaied →"}
               </button>
 
               <div className="login-divider">
                 <span>★</span>
               </div>
 
-              <button className="create-account-button" type="button">Create account</button>
+              <button
+                className="create-account-button"
+                onClick={() => {
+                  setApiError("");
+                  setAuthMode((currentMode) => (currentMode === "login" ? "create" : "login"));
+                }}
+                type="button"
+              >
+                {authMode === "login" ? "Create account" : "Back to login"}
+              </button>
             </form>
           </div>
         </motion.section>
@@ -731,7 +762,7 @@ export default function Home() {
           </div>
 
           <div className="scene-select-footer" key="scene-footer">
-            <button className="portal-return" onClick={() => setAppStep("login")} type="button">
+            <button className="portal-return" onClick={returnToLogin} type="button">
               Back to Login
             </button>
             <button className="enter-button" onClick={enterChatWithAvatar} type="button">
