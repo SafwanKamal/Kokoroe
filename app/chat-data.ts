@@ -34,10 +34,12 @@ export type ChatMessage = {
   id: string;
   roomId: string;
   avatarId?: string;
+  userId?: string;
   author: string;
   text: string;
   tone: MessagePresentationId;
   time: string;
+  createdAt?: string;
   mine?: boolean;
 };
 

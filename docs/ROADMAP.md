@@ -31,7 +31,7 @@ When building the first version, focus on:
 
 Do not overbuild backend or AI infrastructure before the core app works.
 
-The backend phase has started with simple Next.js route handlers and a file-backed development store. The frontend now uses the API for dev login sessions, profile preferences, and message reads/writes. Next steps are real authentication, replacing the dev JSON store with a proper database model, and expanding backend coverage beyond the current happy path.
+The backend phase has started with simple Next.js route handlers and a file-backed development store. The frontend now uses the API for dev login sessions, profile preferences, and message reads/writes. Server-side message creation validates the session, room, avatar, character limit, and presentation. Next steps are real authentication, a SQLite persistence adapter following `docs/DATABASE.md`, and expanding backend coverage beyond the current happy path.
 
 ## Medium-Term Goals
 

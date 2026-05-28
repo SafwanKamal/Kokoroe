@@ -15,7 +15,6 @@ import {
 } from "./message-presentations";
 
 type MessageCreateInput = {
-  author?: unknown;
   avatarId?: unknown;
   roomId?: unknown;
   sessionId?: unknown;
@@ -99,6 +98,22 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
 
 function isPresentationId(value: unknown): value is MessagePresentationId {
   return typeof value === "string" && value in messagePresentations;
+}
+
+function findRoom(roomId: unknown) {
+  if (typeof roomId !== "string") {
+    return undefined;
+  }
+
+  return rooms.find((candidateRoom) => candidateRoom.id === roomId);
+}
+
+function findAvatar(roomId: string, avatarId: unknown) {
+  if (typeof avatarId !== "string") {
+    return undefined;
+  }
+
+  return avatarsByRoom[roomId]?.find((candidateAvatar) => candidateAvatar.id === avatarId);
 }
 
 function getLoginName(input: DevLoginInput) {
@@ -195,10 +210,16 @@ export async function getMessages(roomId?: string) {
   const messages = (await getStore()).messages;
 
   if (!roomId) {
-    return messages;
+    return { messages, status: 200 } as const;
   }
 
-  return messages.filter((message) => message.roomId === roomId);
+  const room = findRoom(roomId);
+
+  if (!room) {
+    return { error: `Unknown room "${roomId}".`, status: 404 } as const;
+  }
+
+  return { messages: messages.filter((message) => message.roomId === room.id), status: 200 } as const;
 }
 
 export async function createDevSession(input: DevLoginInput) {
@@ -264,7 +285,7 @@ export async function updateProfile(input: ProfileUpdateInput) {
   };
 
   if (typeof input.currentRoomId === "string") {
-    const room = rooms.find((candidateRoom) => candidateRoom.id === input.currentRoomId);
+    const room = findRoom(input.currentRoomId);
 
     if (!room) {
       return { error: `Unknown room "${input.currentRoomId}".`, status: 404 } as const;
@@ -279,13 +300,19 @@ export async function updateProfile(input: ProfileUpdateInput) {
         return { error: `Invalid avatar selection for room "${roomId}".`, status: 400 } as const;
       }
 
-      const avatar = avatarsByRoom[roomId]?.find((candidateAvatar) => candidateAvatar.id === avatarId);
+      const room = findRoom(roomId);
 
-      if (!avatar) {
-        return { error: `Unknown avatar "${avatarId}" for room "${roomId}".`, status: 404 } as const;
+      if (!room) {
+        return { error: `Unknown room "${roomId}".`, status: 404 } as const;
       }
 
-      nextProfile.selectedAvatarIds[roomId] = avatar.id;
+      const avatar = findAvatar(room.id, avatarId);
+
+      if (!avatar) {
+        return { error: `Unknown avatar "${avatarId}" for room "${room.id}".`, status: 404 } as const;
+      }
+
+      nextProfile.selectedAvatarIds[room.id] = avatar.id;
     }
   }
 
@@ -297,24 +324,31 @@ export async function updateProfile(input: ProfileUpdateInput) {
 }
 
 export async function createMessage(input: MessageCreateInput) {
+  const sessionResult = await getSessionUser(input.sessionId);
+
+  if (sessionResult.status !== 200) {
+    return sessionResult;
+  }
+
   if (typeof input.roomId !== "string") {
     return { error: "roomId is required.", status: 400 } as const;
   }
 
-  const room = rooms.find((candidateRoom) => candidateRoom.id === input.roomId);
+  const room = findRoom(input.roomId);
 
   if (!room) {
     return { error: `Unknown room "${input.roomId}".`, status: 404 } as const;
   }
 
-  if (typeof input.avatarId !== "string") {
-    return { error: "avatarId is required.", status: 400 } as const;
+  const selectedAvatarId = typeof input.avatarId === "string" ? input.avatarId : sessionResult.user.profile.selectedAvatarIds[room.id];
+  const avatar = findAvatar(room.id, selectedAvatarId);
+
+  if (!selectedAvatarId) {
+    return { error: `No avatar is selected for room "${room.id}".`, status: 400 } as const;
   }
 
-  const avatar = avatarsByRoom[room.id]?.find((candidateAvatar) => candidateAvatar.id === input.avatarId);
-
   if (!avatar) {
-    return { error: `Unknown avatar "${input.avatarId}" for room "${room.id}".`, status: 404 } as const;
+    return { error: `Unknown avatar "${selectedAvatarId}" for room "${room.id}".`, status: 404 } as const;
   }
 
   if (typeof input.text !== "string" || !input.text.trim()) {
@@ -328,25 +362,24 @@ export async function createMessage(input: MessageCreateInput) {
   }
 
   const requestedTone = isPresentationId(input.tone) ? input.tone : "plain";
-  const store = await getStore();
-  const session =
-    typeof input.sessionId === "string"
-      ? store.sessions.find((candidateSession) => candidateSession.id === input.sessionId)
-      : undefined;
-  const sessionUser = session ? store.users.find((candidateUser) => candidateUser.id === session.userId) : undefined;
+  const { store, user } = sessionResult;
+  const now = new Date();
+
+  user.profile.currentRoomId = room.id;
+  user.profile.selectedAvatarIds[room.id] = avatar.id;
+  user.updatedAt = now.toISOString();
   store.counter += 1;
 
   const message: ChatMessage = {
     id: `${room.id}-${Date.now().toString(36)}-${store.counter}`,
     roomId: room.id,
     avatarId: avatar.id,
-    author:
-      typeof input.author === "string" && input.author.trim()
-        ? input.author.trim()
-        : sessionUser?.displayName ?? avatar.name,
+    userId: user.id,
+    author: avatar.name,
     text,
     tone: resolvePresentationId(text, requestedTone),
-    time: formatMessageTime(new Date()),
+    time: formatMessageTime(now),
+    createdAt: now.toISOString(),
     mine: true,
   };
 

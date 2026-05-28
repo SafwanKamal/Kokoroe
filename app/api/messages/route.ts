@@ -3,8 +3,13 @@ import { createMessage, getMessages } from "../../kokoroe-store";
 
 export async function GET(request: NextRequest) {
   const roomId = request.nextUrl.searchParams.get("roomId") ?? undefined;
+  const result = await getMessages(roomId);
 
-  return NextResponse.json({ messages: await getMessages(roomId) });
+  if ("error" in result) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  return NextResponse.json({ messages: result.messages }, { status: result.status });
 }
 
 export async function POST(request: NextRequest) {

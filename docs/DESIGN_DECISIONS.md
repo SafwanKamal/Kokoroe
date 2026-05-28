@@ -123,6 +123,10 @@ The browser app should consume the backend API even while the backend is still l
 
 World-scoped avatar memory belongs in the user profile contract. The frontend may optimistically update selections, but the selected room and per-room avatar ids should be persisted through the backend so refreshing the app does not collapse every world back to the first avatar.
 
+Message creation is server-owned logic. A message must come from a valid session, use an avatar that belongs to the target world, update the user's current room/avatar profile memory, and store the avatar identity as the displayed author. The client may request a tone, but the server resolves the final presentation id.
+
+Database handling is staged in `docs/DATABASE.md`: keep the JSON dev adapter while logic is forming, then move to SQLite before hosted Postgres-scale infrastructure.
+
 ## Concept Art
 
 Curated concept art should guide implementation.
