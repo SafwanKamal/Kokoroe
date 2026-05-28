@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 365 190" preserveAspectRatio="none" role="img" aria-label="Kokoroe whisper message template">
+  <path
+    d="M43 24C73 10 119 9 180 11C242 9 295 11 318 25C334 37 340 61 338 96C337 123 329 141 312 150C286 162 244 166 182 164L114 161C96 172 74 180 51 184C61 175 68 166 72 157C45 152 29 140 25 122C20 98 22 65 29 46C32 37 37 29 43 24Z"
+    fill="#f9f7ef"
+    fill-opacity="0.58"
+    stroke="#79a7c2"
+    stroke-opacity="0.58"
+    stroke-width="3"
+  />
+  <path
+    d="M47 28C77 15 121 14 180 16C239 14 290 16 313 29C327 40 332 62 331 95C329 119 322 134 307 143C282 153 241 157 181 155L111 153C97 163 82 169 65 173C72 166 77 159 80 151C52 147 38 137 34 119C30 96 32 66 38 49C40 40 43 33 47 28Z"
+    fill="none"
+    stroke="#a5c6d8"
+    stroke-opacity="0.4"
+    stroke-width="2"
+    stroke-dasharray="4 6"
+  />
+</svg>

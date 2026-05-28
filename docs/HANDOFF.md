@@ -13,11 +13,16 @@ Continue work in `/Users/safwankamal/Desktop/Code/Kokoroe`. Read `AGENTS.md` and
 ## Current Design State
 
 - Login is a single vertical manga panel.
-- Rotating scene art sits at the top and fades into the paper login area.
+- Rotating scene art sits at the top and fades into the paper login area. Current runtime login art lives in `public/login-scene-current/`; older cycle/cropped login art folders were removed from runtime assets.
 - The login wordmark uses `public/brand/kokoroe-logo-wordmark.svg`.
 - User-facing copy should prefer dream-world/isekaied language over generic chat-space wording.
 - Avatar/persona selection is world-scoped and happens after dream-world selection.
-- Message bubble shape is driven by tone/persona, not by world.
+- Avatar portraits are catalog-driven through `content/avatars/catalog.json`; use `docs/AVATAR_PIPELINE.md` and `npm run avatar:add` when adding generated portraits.
+- World panels use lightweight `public/rooms/<room-id>/preview.jpg` art and featured/chat headers use `scene.jpg`; the red clue-board setting is presented as `Crimson Plotroom`.
+- Message bubble shape is driven by tone/persona, not by world; edit the structured presentation catalog at `content/message-presentations/catalog.json` and follow `docs/MESSAGE_PRESENTATION_PIPELINE.md`.
+- New messages allow up to 120 characters. Dialogue bubbles expand horizontally with their SVG shell before wrapping vertically; compact expressive shells keep lower per-template suitability limits.
+- Chat portraits anchor beneath bubble tails, reveal speaker identity on click, and outgoing messages mirror toward a right-side sender portrait; tone labels are not displayed in the transcript.
+- Timestamps render as centered transcript dividers and suppress repeated nearby message times.
 
 ## Verification Baseline
 

@@ -1,0 +1,182 @@
+{
+  "plain": {
+    "label": "Plain",
+    "shell": "plain",
+    "fontRole": "dialogue",
+    "ink": "ink",
+    "motion": "steady",
+    "maxCharacters": 120,
+    "intensity": 0,
+    "emotionTags": ["neutral", "direct", "conversational"],
+    "classifierHint": "Ordinary conversation without a strong emotional push.",
+    "metrics": {
+      "textWidth": 148,
+      "maxTextWidth": 320,
+      "frameLeft": 76,
+      "frameRight": 76,
+      "frameTop": 33,
+      "frameBottom": 45,
+      "fontSize": 0.82
+    }
+  },
+  "whisper": {
+    "label": "Whisper",
+    "shell": "whisper",
+    "fontRole": "dialogue",
+    "ink": "soft-blue",
+    "motion": "soft",
+    "maxCharacters": 120,
+    "intensity": 1,
+    "emotionTags": ["quiet", "private", "tender"],
+    "classifierHint": "Soft, private, cautious, or gentle speech.",
+    "metrics": {
+      "textWidth": 148,
+      "maxTextWidth": 320,
+      "frameLeft": 76,
+      "frameRight": 76,
+      "frameTop": 33,
+      "frameBottom": 45,
+      "fontSize": 0.8
+    }
+  },
+  "mutter": {
+    "label": "Mutter",
+    "shell": "mutter",
+    "fontRole": "dialogue",
+    "ink": "quiet-green",
+    "motion": "tilt",
+    "maxCharacters": 34,
+    "intensity": 1,
+    "emotionTags": ["aside", "subdued", "complaint"],
+    "classifierHint": "An under-the-breath aside, subdued complaint, or quiet aside.",
+    "metrics": {
+      "textWidth": 112,
+      "maxTextWidth": 190,
+      "frameLeft": 48,
+      "frameRight": 54,
+      "frameTop": 43,
+      "frameBottom": 51,
+      "fontSize": 0.75
+    }
+  },
+  "exclaim": {
+    "label": "Exclaim",
+    "shell": "exclaim",
+    "fontRole": "dialogue",
+    "ink": "coral",
+    "motion": "lift",
+    "maxCharacters": 25,
+    "intensity": 2,
+    "emotionTags": ["delighted", "surprised", "excited"],
+    "classifierHint": "Bright emotional emphasis or delighted surprise.",
+    "metrics": {
+      "textWidth": 116,
+      "maxTextWidth": 190,
+      "frameLeft": 64,
+      "frameRight": 64,
+      "frameTop": 58,
+      "frameBottom": 60,
+      "fontSize": 0.76
+    }
+  },
+  "shout": {
+    "label": "Shout",
+    "shell": "shout",
+    "fontRole": "impact",
+    "ink": "ink",
+    "motion": "jolt",
+    "maxCharacters": 30,
+    "intensity": 3,
+    "emotionTags": ["urgent", "loud", "emphatic"],
+    "classifierHint": "A loud outburst, urgent call, or explosive emphasis.",
+    "metrics": {
+      "textWidth": 118,
+      "maxTextWidth": 210,
+      "frameLeft": 64,
+      "frameRight": 64,
+      "frameTop": 54,
+      "frameBottom": 56,
+      "fontSize": 0.62
+    }
+  },
+  "scribble": {
+    "label": "Scribble",
+    "shell": "scribble",
+    "fontRole": "dialogue",
+    "ink": "inverse",
+    "motion": "restless",
+    "maxCharacters": 22,
+    "intensity": 3,
+    "emotionTags": ["frantic", "confused", "theory"],
+    "classifierHint": "A frantic spiral, wild theory, or visually chaotic thought.",
+    "metrics": {
+      "textWidth": 104,
+      "maxTextWidth": 170,
+      "frameLeft": 60,
+      "frameRight": 60,
+      "frameTop": 56,
+      "frameBottom": 58,
+      "fontSize": 0.74
+    }
+  },
+  "announce": {
+    "label": "Announce",
+    "shell": "announce",
+    "fontRole": "action",
+    "ink": "gold",
+    "motion": "steady",
+    "maxCharacters": 34,
+    "intensity": 2,
+    "emotionTags": ["confident", "informative", "rally"],
+    "classifierHint": "A headline, invitation, confident statement, or public notice.",
+    "metrics": {
+      "textWidth": 132,
+      "maxTextWidth": 240,
+      "frameLeft": 86,
+      "frameRight": 49,
+      "frameTop": 43,
+      "frameBottom": 43,
+      "fontSize": 0.72
+    }
+  },
+  "sad": {
+    "label": "Sad",
+    "shell": "sad",
+    "fontRole": "dialogue",
+    "ink": "soft-blue",
+    "motion": "soft",
+    "maxCharacters": 120,
+    "intensity": 2,
+    "emotionTags": ["vulnerable", "somber", "low-energy"],
+    "classifierHint": "Sorrowful, disappointed, or vulnerable speech.",
+    "metrics": {
+      "textWidth": 136,
+      "maxTextWidth": 300,
+      "frameLeft": 84,
+      "frameRight": 84,
+      "frameTop": 53,
+      "frameBottom": 54,
+      "fontSize": 0.76
+    }
+  },
+  "grandiose": {
+    "label": "Grandiose",
+    "shell": "grandiose",
+    "fontRole": "lively",
+    "ink": "theatrical",
+    "motion": "radiant",
+    "maxCharacters": 32,
+    "intensity": 3,
+    "emotionTags": ["theatrical", "dramatic", "triumphant"],
+    "classifierHint": "Deliberately theatrical declarations or operatic drama.",
+    "metrics": {
+      "textWidth": 118,
+      "maxTextWidth": 230,
+      "frameLeft": 94,
+      "frameRight": 94,
+      "frameTop": 55,
+      "frameBottom": 57,
+      "fontSize": 0.68
+    }
+  }
+}

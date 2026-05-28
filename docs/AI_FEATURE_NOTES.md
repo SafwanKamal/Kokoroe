@@ -51,6 +51,8 @@ Possible context signals:
 
 This context can help decide whether to `shout`, `mutter`, `whisper`, `exclaim`, or keep the message plain.
 
+Presentation selection has an implementation contract now: a future classifier may return one allow-listed `presentationId` from `content/message-presentations/catalog.json`. The catalog owns the SVG shell, typography role, ink, motion, and protective frame padding around the standard text stage. A model should not return CSS, font names, or asset paths, and low-confidence output should fall back to `plain`.
+
 ## Character and World Tone
 
 Future AI behavior may depend on:
@@ -85,6 +87,8 @@ Possible directions:
 - Motion implied through manga effects
 
 Avoid making the app feel like a generic animated sticker platform.
+
+Avatar portrait generation should feed an approval step rather than publish directly. Approved single-character square portraits can enter the existing catalog-driven workflow described in `docs/AVATAR_PIPELINE.md`; discarded generations and contact sheets remain reference material.
 
 ## Architecture Notes for Later
 

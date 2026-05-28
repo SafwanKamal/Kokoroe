@@ -37,15 +37,27 @@ The bubbles should still remain readable and accessible.
 
 World theme does not determine message bubble shape. Worlds set the scene, palette, motif, and surrounding panel language; the message tone/persona determines the bubble template. Until AI tone selection exists, sent messages may receive a varied/random bubble tone for prototyping.
 
+Message presentation is catalog-driven. `content/message-presentations/catalog.json` is the single source for a presentation's SVG shell, font role, ink role, motion behavior, emotional tags, suitability limit, and validated safe-area geometry. A later tone model may select a valid catalog id; it should not compose raw CSS or arbitrary shell/font combinations. Bubbles begin with a compact preferred text stage, expand horizontally up to a catalog-defined safe max width when the message is longer, then grow vertically from actual wrapped text. Newly composed bubble messages allow up to 120 characters. Compact frames such as scribble and shout yield to `plain` for text beyond their declared limit.
+
+Message-template SVGs should expand with the responsive bubble box. Keep the text safe area and the SVG shell coupled, using `preserveAspectRatio="none"` for transcript bubble templates so long desktop messages widen the drawn frame before adding height.
+
+`scribble` uses a fully ink-filled, scratched speech shape with light paper-colored text above it. Keep it for short, frantic messages rather than opening a blank text cavity inside the chaos.
+
+In the transcript, portraits sit beneath and beside their bubble tails so speech visually originates from the character. Incoming tails point toward the left portrait; a user's outgoing bubble shell is mirrored toward a right-side portrait. Do not show persistent tone badges or speaker-name labels beside every bubble. Clicking a portrait may reveal the character identity on demand.
+
+Timestamps should behave like centered transcript dividers rather than per-message metadata. Show the first visible time and then only repeat it when the next message is separated by a meaningful gap; nearby messages should read as one conversational run.
+
+On desktop, the chat window should use most of the available viewport instead of sitting as a small centered panel with large paper margins. Keep mobile and tablet compact, but let the desktop shell grow broadly and vertically while avoiding page overflow.
+
 ## Production Message Template Assets
 
 Use the lightweight SVGs in `docs/RerferenceImages/chat-template-svgs-production/` as implementation reference assets, not the heavier cropped reference SVGs.
 
 - The production SVGs should be decorative shells or accent layers; render message copy as real HTML/CSS text on top.
 - Keep message text selectable, accessible, and responsive.
-- Preserve SVG aspect ratio for fixed-size/compact uses.
-- Do not freely stretch the whole SVG for variable-width messages, because tails, jagged borders, and ornaments will distort.
-- For variable-width bubbles, rebuild the shape as a component, split the artwork into stretch-safe sections, or use a 9-slice/border-image style approach.
+- Preserve SVG aspect ratio for fixed-size/compact non-message uses.
+- For transcript bubbles, the current prototype intentionally allows controlled horizontal SVG stretching so the shell and text box expand together. Keep per-template max widths conservative so tails, jagged borders, and ornaments do not become absurdly distorted.
+- For future higher-fidelity variable-width bubbles, rebuild the shape as a component, split the artwork into stretch-safe sections, or use a 9-slice/border-image style approach.
 - Keep paper grain, halftone, hatching, and speed-line textures as separate optional overlays instead of baking them into every bubble.
 
 ## Text and Microcopy
@@ -66,18 +78,19 @@ Do not make labels so unusual that users cannot understand the interface.
 
 Match the drawn message-tone reference with font settings instead of treating the reference text as image assets.
 
+- Use the app font roles consistently: `M PLUS Rounded 1c` for readable UI, `Kalam` for dialogue/chat lettering, `Dela Gothic One` for heavy impact, `Reggae One` for energetic action labels, and `Mochiy Pop One`/`RocknRoll One` for playful scene and avatar headings.
 - Base handwritten text: use a casual handwritten face with rounded strokes, medium size, normal weight, and slightly loose line-height. Good implementation targets: `Kalam`, `Patrick Hand`, or a similar readable handwritten UI font.
 - Plain: normal weight, black ink, no transform, comfortable letter spacing.
-- Whisper: same handwritten family, very light blue-gray ink at low opacity, wider letter spacing, lighter weight, and softer contrast.
-- Mutter: compact handwritten text, green ink, tighter letter spacing, slightly condensed feel, uneven baseline or small rotation per word when practical.
+- Whisper: a dedicated low-weight translucent light-blue outline shell, with the same handwritten family in very light blue-gray ink at low opacity.
+- Mutter: compact handwritten text, green ink, slightly condensed feel, and small rotation when practical.
 - Thought: softer gray-black ink, regular spacing, slightly looser rhythm than plain.
 - Shout: bold condensed brush/comic display face, uppercase, slight italic slant, red speed-line accents.
 - Exclaim: handwritten text at normal-to-medium weight with bright accent color and sparkle marks; do not over-bold.
 - Announce: clear bold handwritten/display text, stable spacing, official-feeling yellow framing.
-- Scribble: white or light text over chaotic black scribble fill; text should stay readable while the surrounding mark carries the chaos.
+- Scribble: light paper-colored text over a fully ink-filled scratch shell, reserved for short frantic lines.
 - Sad: light blue-gray handwritten text, lower contrast, relaxed spacing, and no aggressive transform.
 - Rage: bold jagged brush face, uppercase, italic/slanted, tight spacing, with red/black splatter accents.
-- Grandiose: tall decorative serif or theatrical display face, uppercase, purple ink, wider spacing, ornate/radiant accents.
+- Grandiose: a theatrical display face, uppercase, purple ink, and ornate/radiant accents.
 - System/reply/failed/typing: keep closer to readable handwritten UI text; use tone color and small accents rather than extreme font changes.
 
 ## Randomness
@@ -118,6 +131,20 @@ The preferred login direction is now a single vertical manga panel: rotating art
 
 Avatar choice is world-scoped. A character/avatar should be selected after choosing a world because the available persona belongs to that world's fiction, setting, or franchise-like continuity. User-facing copy should prefer language like "get isekaied to your dream world" over generic chat-space phrasing.
 
+World and avatar selection should share one compact setup page on desktop. Avoid separate full-screen panels when the decision is part of one flow; use available space dynamically with worlds, selected-world context, avatar choices, and entry actions visible together.
+
+Each world owns its own cast of avatars. Switching worlds from chat should immediately restore the last avatar selected for that world; changing that remembered identity happens through the setup screen, not by carrying an avatar between worlds.
+
+World-owned avatars should stay visibly identifiable after selection: use portrait art, individual accent color, and a concise signature motif in setup and chat presence surfaces while keeping names and message text readable.
+
+Avatars should appear as illustrated, themed identities rather than initial-only tokens. Use their portrait and personal accent in setup selection and chat presence so changing character is visible in the experience.
+
+Multi-character profile sheets and preview/contact-sheet images are reference material only. Never expose them as selectable avatars or runtime identity portraits.
+
+Room theme illustrations are runtime scene assets: surface them in world selection and chat headers so the selected world reads immediately through place and atmosphere. When an illustration contradicts a placeholder world name, adjust the public-facing name while keeping stable internal ids for state continuity.
+
+Keep high-resolution room art as reference/source material, and serve compressed derivatives from `public/rooms/<room-id>/scene.jpg` for featured surfaces and `preview.jpg` for card/sidebar thumbnails.
+
 ## Usability
 
 Personality should not come at the cost of usability.
@@ -130,6 +157,10 @@ The app must remain:
 - Clear
 - Fast enough for normal use
 - Visually consistent
+
+Desktop panels should feel vertically balanced in the viewport. Major windows, widgets, and page sections should not appear pinned too high or stretched downward unless the content truly needs scrolling.
+
+Motion should make screen changes feel like moving through manga panels, not generic app fades. Use `motion/react` for screen transitions, selectable-card feedback, message entry movement, and layout changes. CSS animations may carry ambient paper grain, subtle scene breathing, speed-line movement, selected-state energy, and typing indicators. Always respect reduced-motion preferences.
 
 ## Design Review Rule
 

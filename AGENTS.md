@@ -84,6 +84,21 @@ After meaningful changes:
 
 Do not rely only on terminal tests for UI work.
 
+## Avatar Intake
+
+- Read `docs/AVATAR_PIPELINE.md` before adding or replacing avatar portraits.
+- Keep runtime portraits in `public/avatars/<room-id>/<avatar-id>/portrait.png` and metadata in `content/avatars/catalog.json`.
+- Never publish contact sheets, multi-character previews, or reference-only images as runtime avatars.
+- Use `npm run avatar:add` for new or replacement portraits after visual review, then inspect both setup and chat views in the browser.
+
+## Message Presentations
+
+- Read `docs/MESSAGE_PRESENTATION_PIPELINE.md` before adding or changing chat bubble styles.
+- Define bubble shell, typography role, ink, motion, classifier hints, responsive text width, and tested safe-area geometry together in `content/message-presentations/catalog.json`.
+- Future tone selection should choose an allowed presentation id; it should not produce arbitrary CSS, asset paths, or typography values.
+- In chat, attach the portrait beneath the bubble tail; mirror outgoing bubble shells toward the right-side sender. Reveal speaker identity from the portrait rather than persistently labeling each message.
+- Inspect long text within each changed shell in the browser before considering a presentation finished.
+
 ## Project Memory
 
 When the user gives a project-level preference, design rule, naming convention, architecture decision, recurring correction, or future feature idea, do not rely only on chat memory.

@@ -1,0 +1,94 @@
+{
+  "after-school": [
+    {
+      "id": "skybell-hina",
+      "name": "Hina",
+      "mark": "HI",
+      "description": "Rumor catcher",
+      "signature": "radio club signal",
+      "accentColor": "#2B88B5",
+      "imageSrc": "/avatars/after-school/skybell-hina/portrait.png",
+      "thumbnail": {
+        "x": -2,
+        "y": 18,
+        "scale": 1.58
+      }
+    }
+  ],
+  "quiet-alley": [
+    {
+      "id": "library-ink",
+      "name": "Ink",
+      "mark": "IN",
+      "description": "Archive night guard",
+      "signature": "lamp-lit margins",
+      "accentColor": "#2F7D3B",
+      "imageSrc": "/avatars/quiet-alley/library-ink/portrait.png",
+      "thumbnail": {
+        "x": 0,
+        "y": 18,
+        "scale": 1.58
+      }
+    },
+    {
+      "id": "library-ame",
+      "name": "Ame",
+      "mark": "AM",
+      "description": "Rain listener",
+      "signature": "courtyard hush",
+      "accentColor": "#4E8891",
+      "imageSrc": "/avatars/quiet-alley/library-ame/portrait.png",
+      "thumbnail": {
+        "x": 0,
+        "y": 18,
+        "scale": 1.58
+      }
+    },
+    {
+      "id": "library-shiori",
+      "name": "Shiori",
+      "mark": "SH",
+      "description": "Station poet",
+      "signature": "last-train verse",
+      "accentColor": "#486782",
+      "imageSrc": "/avatars/quiet-alley/library-shiori/portrait.png",
+      "thumbnail": {
+        "x": 0,
+        "y": 18,
+        "scale": 1.58
+      }
+    }
+  ],
+  "ramen-stand": [
+    {
+      "id": "ramen-yuto",
+      "name": "Yuto",
+      "mark": "YU",
+      "description": "Ramen cartographer",
+      "signature": "broth-route mapper",
+      "accentColor": "#C58A16",
+      "imageSrc": "/avatars/ramen-stand/ramen-yuto/portrait.png",
+      "thumbnail": {
+        "x": -4,
+        "y": 20,
+        "scale": 1.62
+      }
+    }
+  ],
+  "battle-rooftop": [
+    {
+      "id": "roof-rei",
+      "name": "Rei",
+      "mark": "RI",
+      "description": "Plot announcer",
+      "signature": "twist broadcast",
+      "accentColor": "#DD594B",
+      "imageSrc": "/avatars/battle-rooftop/roof-rei/portrait.png",
+      "thumbnail": {
+        "x": 0,
+        "y": 18,
+        "scale": 1.58
+      }
+    }
+  ]
+}

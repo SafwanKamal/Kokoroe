@@ -49,3 +49,10 @@ Examples:
 - Use CSS borders, paper texture overlays, and reusable panel components before relying on many image assets.
 - Keep form fields conventional enough to be immediately understandable.
 - Treat world panels as data-driven cards with per-world accent color, verb, icon, short description, and illustration slot.
+
+## Curated Room Scenes
+
+- `after-school-arc.png` belongs to `Skybell Academy`: sunlit hallway, lockers, after-class social energy.
+- `quiet-corner.png` belongs to `Mizukage Library`: rainy reading corner, blue hush, private conversation.
+- `late-night-ramen.png` belongs to `Yoru Ramen Yokocho`: lantern counter, shared bowls, warm midnight chatter.
+- `plot-twist.png` belongs to `Crimson Plotroom`: red-thread evidence wall and reveal-driven drama; do not label this setting as a rooftop.
