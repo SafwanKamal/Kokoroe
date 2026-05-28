@@ -27,8 +27,11 @@ When building the first version, focus on:
 5. Room-specific visual personality
 6. Clean component structure
 7. Browser-verified UI polish
+8. Backend API contracts for rooms, avatars, messages, and later authentication
 
 Do not overbuild backend or AI infrastructure before the core app works.
+
+The backend phase has started with simple Next.js route handlers. Next steps are persistence, real authentication, and moving the frontend from local state to API-backed state.
 
 ## Medium-Term Goals
 

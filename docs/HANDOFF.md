@@ -10,6 +10,15 @@ Continue work in `/Users/safwankamal/Desktop/Code/Kokoroe`. Read `AGENTS.md` and
 
 `Login -> Dream World Selection -> World-Specific Avatar Selection -> Chat`
 
+## Current Backend State
+
+- The frontend milestone is saved in git as `fc68c65` (`Checkpoint manga chat frontend`).
+- Backend work has started with Next.js API routes:
+  - `GET /api/rooms`
+  - `GET /api/messages?roomId=<room-id>`
+  - `POST /api/messages`
+- These routes currently use the existing seed/catalog data and an in-memory message store. Treat this as the API contract and development bridge before adding durable persistence and real authentication.
+
 ## Current Design State
 
 - Login is a single vertical manga panel.

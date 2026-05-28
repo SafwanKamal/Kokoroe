@@ -113,6 +113,10 @@ Avoid randomness that harms usability:
 - Excessive decoration
 - Confusing button labels
 
+## Backend Direction
+
+Build the backend behind narrow typed API contracts before moving more UI behavior around. The first backend layer lives in Next.js route handlers and exposes room/avatar catalog data plus message reads/writes. Keep persistence swappable: the current in-memory store is a development bridge, not the long-term data model.
+
 ## Concept Art
 
 Curated concept art should guide implementation.
