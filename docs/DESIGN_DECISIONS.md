@@ -119,6 +119,8 @@ Build the backend behind narrow typed API contracts before moving more UI behavi
 
 Authentication endpoints may create development sessions, but they must not claim to verify real passwords until production auth is implemented. Do not store password-like values in the dev store.
 
+The browser app should consume the backend API even while the backend is still local-development grade. Avoid reintroducing separate frontend-only message stores once an API contract exists.
+
 ## Concept Art
 
 Curated concept art should guide implementation.

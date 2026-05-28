@@ -7,9 +7,9 @@ import {
   initialAvatarSelections,
   loginSceneArts,
   rooms,
-  startingMessages,
   type ChatMessage,
 } from "./chat-data";
+import { createLoginSession, fetchRoomMessages, postRoomMessage } from "./kokoroe-api";
 import {
   getBubbleFrameStyle,
   getRandomPresentationId,
@@ -30,10 +30,6 @@ const screenMotion = {
 const cardTap = { scale: 0.975, rotate: -0.4 };
 const cardHover = { y: -3, rotate: 0.15 };
 const timestampGapMinutes = 5;
-
-function formatChatTime(date: Date) {
-  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
 
 function getTimeMinutes(time: string) {
   const match = time.trim().match(/^(\d{1,2}):(\d{2})(?:\s*([AP]M))?$/i);
@@ -75,6 +71,10 @@ function shouldShowTimestamp(message: ChatMessage, previousMessage?: ChatMessage
   return Math.min(sameDayGap, wrappedGap) >= timestampGapMinutes;
 }
 
+function mergeRoomMessages(currentMessages: ChatMessage[], roomId: string, roomMessages: ChatMessage[]) {
+  return [...currentMessages.filter((message) => message.roomId !== roomId), ...roomMessages];
+}
+
 export default function Home() {
   const [appStep, setAppStep] = useState<AppStep>("login");
   const [selectedRoomId, setSelectedRoomId] = useState(rooms[0].id);
@@ -82,10 +82,14 @@ export default function Home() {
   const [loginArtIndex, setLoginArtIndex] = useState(0);
   const [displayName, setDisplayName] = useState("");
   const [draft, setDraft] = useState("");
-  const [messages, setMessages] = useState(startingMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sessionId, setSessionId] = useState<string | undefined>();
+  const [apiError, setApiError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [revealedProfileMessageId, setRevealedProfileMessageId] = useState<string | null>(null);
   const messageScrollRef = useRef<HTMLDivElement>(null);
-  const sentMessageCount = useRef(0);
 
   const selectedRoom = useMemo(
     () => rooms.find((room) => room.id === selectedRoomId) ?? rooms[0],
@@ -102,9 +106,26 @@ export default function Home() {
 
   const activeLoginArt = loginSceneArts[loginArtIndex];
 
-  function submitLogin(event: FormEvent<HTMLFormElement>) {
+  async function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setAppStep("scene");
+    setApiError("");
+    setIsLoggingIn(true);
+
+    try {
+      const name = displayName.trim();
+      const result = await createLoginSession({
+        displayName: name || undefined,
+        usernameOrEmail: name || undefined,
+      });
+
+      setDisplayName(result.user.displayName);
+      setSessionId(result.session.id);
+      setAppStep("scene");
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "Login failed.");
+    } finally {
+      setIsLoggingIn(false);
+    }
   }
 
   function chooseRoom(roomId: string) {
@@ -128,31 +149,33 @@ export default function Home() {
     setAppStep("chat");
   }
 
-  function sendLine(event: FormEvent<HTMLFormElement>) {
+  async function sendLine(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = draft.trim();
 
-    if (!text) {
+    if (!text || isSending) {
       return;
     }
 
-    sentMessageCount.current += 1;
-    const messageId = `${selectedRoom.id}-sent-${sentMessageCount.current}`;
+    setApiError("");
+    setIsSending(true);
 
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      {
-        id: messageId,
+    try {
+      const message = await postRoomMessage({
+        sessionId,
         roomId: selectedRoom.id,
         avatarId: selectedAvatar.id,
-        author: displayName.trim() || selectedAvatar.name,
         text,
         tone: getRandomPresentationId(text),
-        time: formatChatTime(new Date()),
-        mine: true,
-      },
-    ]);
-    setDraft("");
+      });
+
+      setMessages((currentMessages) => [...currentMessages, message]);
+      setDraft("");
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "Message failed to send.");
+    } finally {
+      setIsSending(false);
+    }
   }
 
   const roomMessages = messages.filter((message) => message.roomId === selectedRoom.id);
@@ -193,6 +216,36 @@ export default function Home() {
 
     return () => window.cancelAnimationFrame(scrollFrame);
   }, [appStep, roomMessages.length, selectedRoomId]);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    setApiError("");
+    setIsLoadingMessages(true);
+
+    fetchRoomMessages(selectedRoom.id)
+      .then((roomMessagePayload) => {
+        if (!isCurrent) {
+          return;
+        }
+
+        setMessages((currentMessages) => mergeRoomMessages(currentMessages, selectedRoom.id, roomMessagePayload));
+      })
+      .catch((error) => {
+        if (isCurrent) {
+          setApiError(error instanceof Error ? error.message : "Could not load room messages.");
+        }
+      })
+      .finally(() => {
+        if (isCurrent) {
+          setIsLoadingMessages(false);
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [selectedRoom.id]);
 
   useEffect(() => {
     if (appStep !== "login") {
@@ -299,6 +352,8 @@ export default function Home() {
             </header>
 
             <div className="message-scroll" aria-live="polite" key="chat-messages" ref={messageScrollRef}>
+              {isLoadingMessages ? <div className="api-status">Loading panels...</div> : null}
+              {apiError ? <div className="api-status" data-tone="error">{apiError}</div> : null}
               <AnimatePresence initial={false}>
                 {roomMessages.flatMap((message, index) => {
                   const messageAvatar = getMessageAvatar(message);
@@ -415,7 +470,7 @@ export default function Home() {
                   value={draft}
                 />
               </label>
-              <button type="submit">Send</button>
+              <button disabled={isSending} type="submit">{isSending ? "Sending" : "Send"}</button>
             </form>
           </motion.div>
         </motion.section>
@@ -474,8 +529,10 @@ export default function Home() {
                 Forgot password?
               </a>
 
-              <button className="enter-button login-enter" type="submit">
-                Get Isekaied →
+              {apiError ? <div className="api-status" data-tone="error">{apiError}</div> : null}
+
+              <button className="enter-button login-enter" disabled={isLoggingIn} type="submit">
+                {isLoggingIn ? "Opening portal..." : "Get Isekaied →"}
               </button>
 
               <div className="login-divider">

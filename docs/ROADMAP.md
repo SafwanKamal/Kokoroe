@@ -31,7 +31,7 @@ When building the first version, focus on:
 
 Do not overbuild backend or AI infrastructure before the core app works.
 
-The backend phase has started with simple Next.js route handlers and a file-backed development store. Next steps are real authentication, moving the frontend from local state to API-backed state, and replacing the dev JSON store with a proper database model.
+The backend phase has started with simple Next.js route handlers and a file-backed development store. The frontend now uses the API for dev login sessions and message reads/writes. Next steps are real authentication, replacing the dev JSON store with a proper database model, and expanding backend coverage beyond the current happy path.
 
 ## Medium-Term Goals
 

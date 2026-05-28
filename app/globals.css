@@ -827,6 +827,32 @@ h2 {
   font-weight: 900;
 }
 
+.api-status {
+  justify-self: center;
+  width: fit-content;
+  max-width: min(34rem, 100%);
+  padding: 0.42rem 0.68rem;
+  border: 2px solid var(--panel-border);
+  background: color-mix(in srgb, var(--highlight-yellow) 30%, var(--field-cream));
+  box-shadow: 3px 3px 0 rgba(18, 17, 15, 0.16);
+  color: var(--soft-ink);
+  font-family: var(--font-rounded-stack);
+  font-size: 0.88rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.api-status[data-tone="error"] {
+  background: color-mix(in srgb, var(--error-red) 18%, var(--field-cream));
+  color: var(--error-red);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.72);
+  opacity: 0.72;
+}
+
 .social-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
