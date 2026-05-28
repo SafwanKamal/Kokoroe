@@ -1,11 +1,8 @@
 import { randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { promisify } from "node:util";
 import {
   avatarsByRoom,
   rooms,
-  startingMessages,
   type ChatMessage,
 } from "./chat-data";
 import {
@@ -14,6 +11,20 @@ import {
   resolvePresentationId,
   type MessagePresentationId,
 } from "./message-presentations";
+import { createJsonStoreAdapter } from "./stores/json-store";
+import type {
+  KokoroeProfile,
+  KokoroePublicUser,
+  KokoroeSession,
+  KokoroeUser,
+  StoreState,
+} from "./stores/types";
+export type {
+  KokoroeProfile,
+  KokoroePublicUser,
+  KokoroeSession,
+  KokoroeUser,
+} from "./stores/types";
 
 type MessageCreateInput = {
   avatarId?: unknown;
@@ -36,58 +47,9 @@ type ProfileUpdateInput = {
   sessionId?: unknown;
 };
 
-export type KokoroeProfile = {
-  currentRoomId: string;
-  selectedAvatarIds: Record<string, string>;
-};
-
-export type KokoroeUser = {
-  id: string;
-  displayName: string;
-  email?: string;
-  passwordHash?: string;
-  passwordSalt?: string;
-  profile: KokoroeProfile;
-  username?: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type KokoroePublicUser = Omit<KokoroeUser, "passwordHash" | "passwordSalt">;
-
-export type KokoroeSession = {
-  id: string;
-  userId: string;
-  createdAt: string;
-  lastSeenAt: string;
-};
-
-type StoreState = {
-  version: 1;
-  counter: number;
-  users: KokoroeUser[];
-  sessions: KokoroeSession[];
-  messages: ChatMessage[];
-};
-
-const dataDirectory = path.join(process.cwd(), ".data");
-const storePath = path.join(dataDirectory, "kokoroe-dev-store.json");
 const hashLength = 64;
 const scrypt = promisify(scryptCallback);
-const globalStore = globalThis as typeof globalThis & {
-  __kokoroeStore?: StoreState;
-  __kokoroeWriteQueue?: Promise<void>;
-};
-
-function createSeedStore(): StoreState {
-  return {
-    version: 1,
-    counter: 0,
-    users: [],
-    sessions: [],
-    messages: [...startingMessages],
-  };
-}
+const storeAdapter = createJsonStoreAdapter();
 
 function createDefaultProfile(): KokoroeProfile {
   return {
@@ -100,10 +62,6 @@ function createDefaultProfile(): KokoroeProfile {
 
 function formatMessageTime(date: Date) {
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
-
-function isNodeError(error: unknown): error is NodeJS.ErrnoException {
-  return error instanceof Error && "code" in error;
 }
 
 function isPresentationId(value: unknown): value is MessagePresentationId {
@@ -180,39 +138,11 @@ async function verifyPassword(password: string, passwordHash: string, passwordSa
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-async function persistStore(store: StoreState) {
-  const payload = `${JSON.stringify(store, null, 2)}\n`;
-  const tempPath = `${storePath}.tmp`;
-
-  globalStore.__kokoroeWriteQueue = (globalStore.__kokoroeWriteQueue ?? Promise.resolve()).then(async () => {
-    await mkdir(dataDirectory, { recursive: true });
-    await writeFile(tempPath, payload, "utf8");
-    await rename(tempPath, storePath);
-  });
-
-  await globalStore.__kokoroeWriteQueue;
-}
-
-async function readStoreFromDisk() {
-  try {
-    const rawStore = await readFile(storePath, "utf8");
-    return JSON.parse(rawStore) as StoreState;
-  } catch (error) {
-    if (!isNodeError(error) || error.code !== "ENOENT") {
-      throw error;
-    }
-
-    const seedStore = createSeedStore();
-    await persistStore(seedStore);
-    return seedStore;
-  }
-}
-
 async function getStore() {
-  globalStore.__kokoroeStore ??= await readStoreFromDisk();
+  const store = await storeAdapter.getState();
   let didMigrate = false;
 
-  for (const user of globalStore.__kokoroeStore.users) {
+  for (const user of store.users) {
     if (!(user as Partial<KokoroeUser>).profile) {
       user.profile = createDefaultProfile();
       didMigrate = true;
@@ -220,10 +150,14 @@ async function getStore() {
   }
 
   if (didMigrate) {
-    await persistStore(globalStore.__kokoroeStore);
+    await saveStore(store);
   }
 
-  return globalStore.__kokoroeStore;
+  return store;
+}
+
+async function saveStore(store: StoreState) {
+  await storeAdapter.saveState(store);
 }
 
 function findUserByCredential(store: StoreState, identifier: string) {
@@ -325,7 +259,7 @@ export async function createDevSession(input: DevLoginInput) {
   user.updatedAt = now;
   const session = createSession(user.id);
   store.sessions.push(session);
-  await persistStore(store);
+  await saveStore(store);
 
   return { user, session, status: 201 } as const;
 }
@@ -372,7 +306,7 @@ export async function createAccount(input: DevLoginInput) {
 
   store.users.push(user);
   store.sessions.push(session);
-  await persistStore(store);
+  await saveStore(store);
 
   return { user, session, status: 201 } as const;
 }
@@ -386,7 +320,7 @@ export async function getDevSession(sessionId: unknown) {
 
   const { session, store, user } = result;
   session.lastSeenAt = new Date().toISOString();
-  await persistStore(store);
+  await saveStore(store);
 
   return { user, session, status: 200 } as const;
 }
@@ -438,7 +372,7 @@ export async function updateProfile(input: ProfileUpdateInput) {
 
   user.profile = nextProfile;
   user.updatedAt = new Date().toISOString();
-  await persistStore(store);
+  await saveStore(store);
 
   return { profile: user.profile, user, status: 200 } as const;
 }
@@ -504,7 +438,7 @@ export async function createMessage(input: MessageCreateInput) {
   };
 
   store.messages.push(message);
-  await persistStore(store);
+  await saveStore(store);
 
   return { message, status: 201 } as const;
 }

@@ -127,6 +127,8 @@ Message creation is server-owned logic. A message must come from a valid session
 
 Database handling is staged in `docs/DATABASE.md`: keep the JSON dev adapter while logic is forming, then move to SQLite before hosted Postgres-scale infrastructure.
 
+Persistence code should live behind adapters in `app/stores/`. Route handlers and UI code should depend on the domain API in `app/kokoroe-store.ts`, not on JSON files, SQLite, or hosted database clients directly.
+
 ## Concept Art
 
 Curated concept art should guide implementation.

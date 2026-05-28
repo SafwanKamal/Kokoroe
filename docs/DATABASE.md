@@ -10,12 +10,24 @@ Use `.data/kokoroe-dev-store.json` as the local development adapter.
 - It is good enough for feature logic, profile memory, and API contract work.
 - It is not production storage.
 - Do not store plaintext passwords or secrets in it. Development credentials may store salted password hashes only.
+- The adapter boundary lives under `app/stores/`. Domain logic should call a store adapter, not file-system APIs directly.
+
+## Store Adapter Contract
+
+The current adapter contract is intentionally small:
+
+- `getState()`: load the complete development state.
+- `saveState(store)`: persist the updated state.
+
+This matches the JSON adapter today and gives us a clean seam for SQLite/Postgres later. When moving to SQL, replace broad full-state saves with table-specific repository methods without changing route contracts.
 
 ## Next Database Step
 
 Move to SQLite before adding hosted infrastructure.
 
 SQLite is the right next step because Kokoroe is still shaping its data model, and local development should remain cheap, inspectable, and easy to reset. The schema should be written so it can later move to Postgres with minimal model changes.
+
+For deployment with realtime, the likely production path is Supabase Postgres: route handlers keep doing validation/writes, and clients subscribe to committed room message changes.
 
 ## Initial Tables
 
