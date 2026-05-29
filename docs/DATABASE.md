@@ -21,11 +21,11 @@ The current adapter contract is intentionally small:
 - `getState()`: load the complete development state.
 - `saveState(store)`: persist the updated state.
 
-This matches the JSON adapter today and gives us a clean seam for SQLite/Postgres later. The first SQLite adapter stores the same state snapshot inside SQLite so we can verify runtime wiring without changing domain behavior. When moving to durable SQL modeling, replace broad full-state saves with table-specific repository methods without changing route contracts.
+This matches the JSON adapter today and gives us a clean seam for SQLite/Postgres later. The SQLite adapter now writes relational tables for users, sessions, profiles, avatar selections, and messages while still reconstructing the full state object for the current domain layer. A later repository pass should replace broad full-state saves with table-specific writes without changing route contracts.
 
 ## Next Database Step
 
-Move from the SQLite snapshot adapter to relational SQLite tables before adding hosted infrastructure.
+Move from full-state adapter methods to table-specific repository methods before adding hosted infrastructure.
 
 SQLite is the right next step because Kokoroe is still shaping its data model, and local development should remain cheap, inspectable, and easy to reset. The schema should be written so it can later move to Postgres with minimal model changes.
 
@@ -40,6 +40,17 @@ For deployment with realtime, the likely production path is Supabase Postgres: r
 - `user_avatar_selections`: one selected avatar per user per room
 - `rooms`: only if runtime-created rooms exist; static catalog rooms can stay in content files for now
 - `messages`: room id, user id, avatar id, text, presentation id, created timestamp
+
+Implemented local SQLite tables:
+
+- `store_meta`
+- `users`
+- `user_profiles`
+- `user_avatar_selections`
+- `sessions`
+- `messages`
+
+The older SQLite snapshot row in `app_state` is read once if present and migrated into relational tables.
 
 ## Rules
 

@@ -29,7 +29,7 @@ Continue work in `/Users/safwankamal/Desktop/Code/Kokoroe`. Read `AGENTS.md` and
 - The frontend profile state is also API-backed: selected room and per-world avatar selections are stored on the dev user profile.
 - Message creation now requires a valid session and stores the selected room/avatar back onto the user profile. The displayed message author is the avatar identity, not arbitrary client-supplied text.
 - Database direction is documented in `docs/DATABASE.md`: keep JSON as the temporary dev adapter, then move to SQLite before a hosted database. The current JSON adapter lives under `app/stores/`; keep route handlers pointed at the domain API instead of a concrete database client.
-- `KOKOROE_STORE=sqlite` switches the backend to `.data/kokoroe-dev.sqlite`. The current SQLite adapter stores the same state snapshot for wiring validation; relational SQLite tables are the next persistence refinement.
+- `KOKOROE_STORE=sqlite` switches the backend to `.data/kokoroe-dev.sqlite`. The SQLite adapter stores relational rows for users, profiles, avatar selections, sessions, and messages while preserving the current state-shaped adapter contract.
 
 ## Current Design State
 
