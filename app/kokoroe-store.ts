@@ -12,6 +12,7 @@ import {
   type MessagePresentationId,
 } from "./message-presentations";
 import { createJsonStoreAdapter } from "./stores/json-store";
+import { createSqliteStoreAdapter } from "./stores/sqlite-store";
 import type {
   KokoroeProfile,
   KokoroePublicUser,
@@ -49,7 +50,9 @@ type ProfileUpdateInput = {
 
 const hashLength = 64;
 const scrypt = promisify(scryptCallback);
-const storeAdapter = createJsonStoreAdapter();
+const storeAdapter = process.env.KOKOROE_STORE === "sqlite"
+  ? createSqliteStoreAdapter()
+  : createJsonStoreAdapter();
 
 function createDefaultProfile(): KokoroeProfile {
   return {

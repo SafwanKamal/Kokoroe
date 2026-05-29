@@ -1,6 +1,6 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { startingMessages } from "../chat-data";
+import { createSeedStore } from "./seed";
 import type { KokoroeStoreAdapter, StoreState } from "./types";
 
 const dataDirectory = path.join(process.cwd(), ".data");
@@ -9,16 +9,6 @@ const globalStore = globalThis as typeof globalThis & {
   __kokoroeStore?: StoreState;
   __kokoroeWriteQueue?: Promise<void>;
 };
-
-function createSeedStore(): StoreState {
-  return {
-    version: 1,
-    counter: 0,
-    users: [],
-    sessions: [],
-    messages: [...startingMessages],
-  };
-}
 
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && "code" in error;

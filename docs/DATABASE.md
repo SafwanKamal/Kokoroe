@@ -4,13 +4,15 @@ Kokoroe should keep backend logic behind a persistence boundary instead of letti
 
 ## Current Stage
 
-Use `.data/kokoroe-dev-store.json` as the local development adapter.
+Use `.data/kokoroe-dev-store.json` as the default local development adapter.
 
 - It is ignored by git.
 - It is good enough for feature logic, profile memory, and API contract work.
 - It is not production storage.
 - Do not store plaintext passwords or secrets in it. Development credentials may store salted password hashes only.
 - The adapter boundary lives under `app/stores/`. Domain logic should call a store adapter, not file-system APIs directly.
+
+Set `KOKOROE_STORE=sqlite` to use the SQLite adapter at `.data/kokoroe-dev.sqlite`.
 
 ## Store Adapter Contract
 
@@ -19,11 +21,11 @@ The current adapter contract is intentionally small:
 - `getState()`: load the complete development state.
 - `saveState(store)`: persist the updated state.
 
-This matches the JSON adapter today and gives us a clean seam for SQLite/Postgres later. When moving to SQL, replace broad full-state saves with table-specific repository methods without changing route contracts.
+This matches the JSON adapter today and gives us a clean seam for SQLite/Postgres later. The first SQLite adapter stores the same state snapshot inside SQLite so we can verify runtime wiring without changing domain behavior. When moving to durable SQL modeling, replace broad full-state saves with table-specific repository methods without changing route contracts.
 
 ## Next Database Step
 
-Move to SQLite before adding hosted infrastructure.
+Move from the SQLite snapshot adapter to relational SQLite tables before adding hosted infrastructure.
 
 SQLite is the right next step because Kokoroe is still shaping its data model, and local development should remain cheap, inspectable, and easy to reset. The schema should be written so it can later move to Postgres with minimal model changes.
 
