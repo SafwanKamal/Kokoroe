@@ -45,4 +45,5 @@ For deployment with realtime, the likely production path is Supabase Postgres: r
 - Messages and user profile choices should be database-backed once SQLite is introduced.
 - Message creation must validate session, room, avatar ownership-by-room, character limit, and presentation id on the server.
 - Login must verify credentials server-side. Account creation must reject duplicates and never persist plaintext passwords.
+- Browser sessions should be restored through an httpOnly session cookie. Client state may mirror the current session id while the app is running, but refresh/login continuity should not depend on readable browser storage.
 - The frontend should treat the API as the source of truth, even while the backing store is still JSON.

@@ -119,6 +119,8 @@ Build the backend behind narrow typed API contracts before moving more UI behavi
 
 Authentication endpoints create development sessions, but login and account creation should still be credential-backed. The server hashes passwords with a salt, rejects duplicate accounts, verifies login credentials, and then returns the same session/profile contract used by the rest of the app. Do not store plaintext passwords in the dev store.
 
+Authenticated browser continuity should use an httpOnly session cookie. The React app may keep session state in memory for convenience, but refresh restore and logout should go through backend auth routes rather than localStorage.
+
 The browser app should consume the backend API even while the backend is still local-development grade. Avoid reintroducing separate frontend-only message stores once an API contract exists.
 
 World-scoped avatar memory belongs in the user profile contract. The frontend may optimistically update selections, but the selected room and per-room avatar ids should be persisted through the backend so refreshing the app does not collapse every world back to the first avatar.

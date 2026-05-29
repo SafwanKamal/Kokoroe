@@ -1598,6 +1598,16 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.nav-actions {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: auto;
+}
+
+.nav-actions .portal-return {
+  margin-top: 0;
+}
+
 .chat-panel {
   --accent: var(--primary-blue);
   --room-wash: var(--sky-wash);

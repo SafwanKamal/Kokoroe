@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMessage, getMessages } from "../../kokoroe-store";
+import { getSessionIdFromRequest } from "../auth/session-cookie";
 
 export async function GET(request: NextRequest) {
   const roomId = request.nextUrl.searchParams.get("roomId") ?? undefined;
@@ -25,7 +26,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Request body must be an object." }, { status: 400 });
   }
 
-  const result = await createMessage(body);
+  const result = await createMessage({
+    ...body,
+    sessionId: "sessionId" in body ? body.sessionId : getSessionIdFromRequest(request),
+  });
 
   if ("error" in result) {
     return NextResponse.json({ error: result.error }, { status: result.status });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAccount, getPublicUser } from "../../../kokoroe-store";
+import { setSessionCookie } from "../session-cookie";
 
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  return NextResponse.json(
+  const response = NextResponse.json(
     {
       mode: "development",
       user: getPublicUser(result.user),
@@ -28,4 +29,7 @@ export async function POST(request: NextRequest) {
     },
     { status: result.status },
   );
+
+  setSessionCookie(response, result.session.id);
+  return response;
 }

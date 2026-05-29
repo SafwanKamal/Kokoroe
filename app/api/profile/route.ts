@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDevSession, getPublicUser, updateProfile } from "../../kokoroe-store";
+import { getSessionIdFromRequest } from "../auth/session-cookie";
 
 export async function GET(request: NextRequest) {
-  const result = await getDevSession(request.nextUrl.searchParams.get("sessionId"));
+  const sessionId = request.nextUrl.searchParams.get("sessionId") ?? getSessionIdFromRequest(request);
+  const result = await getDevSession(sessionId);
 
   if (result.status !== 200) {
     return NextResponse.json({ error: result.error }, { status: result.status });
@@ -24,7 +26,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Request body must be an object." }, { status: 400 });
   }
 
-  const result = await updateProfile(body);
+  const result = await updateProfile({
+    ...body,
+    sessionId: "sessionId" in body ? body.sessionId : getSessionIdFromRequest(request),
+  });
 
   if (result.status !== 200) {
     return NextResponse.json({ error: result.error }, { status: result.status });

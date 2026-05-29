@@ -18,6 +18,8 @@ type LoginResponse = {
   session: KokoroeSession;
 };
 
+type CurrentSessionResponse = ({ authenticated: true } & LoginResponse) | { authenticated: false };
+
 type ProfileResponse = {
   profile: KokoroeProfile;
   user?: KokoroePublicUser;
@@ -73,6 +75,20 @@ export async function createAccountSession(payload: LoginPayload) {
   });
 
   return readApiJson<LoginResponse>(response);
+}
+
+export async function fetchCurrentSession() {
+  const response = await fetch("/api/auth/session");
+  const result = await readApiJson<CurrentSessionResponse>(response);
+  return result.authenticated ? result : null;
+}
+
+export async function logoutSession() {
+  const response = await fetch("/api/auth/logout", { method: "POST" });
+
+  if (!response.ok) {
+    throw new Error("Logout failed.");
+  }
 }
 
 export async function fetchRoomMessages(roomId: string) {

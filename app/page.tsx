@@ -9,7 +9,16 @@ import {
   rooms,
   type ChatMessage,
 } from "./chat-data";
-import { createAccountSession, createLoginSession, fetchProfile, fetchRoomMessages, patchProfile, postRoomMessage } from "./kokoroe-api";
+import {
+  createAccountSession,
+  createLoginSession,
+  fetchCurrentSession,
+  fetchProfile,
+  fetchRoomMessages,
+  logoutSession,
+  patchProfile,
+  postRoomMessage,
+} from "./kokoroe-api";
 import {
   getBubbleFrameStyle,
   getRandomPresentationId,
@@ -90,6 +99,7 @@ export default function Home() {
   const [apiError, setApiError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isRestoringSession, setIsRestoringSession] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [revealedProfileMessageId, setRevealedProfileMessageId] = useState<string | null>(null);
   const messageScrollRef = useRef<HTMLDivElement>(null);
@@ -185,6 +195,25 @@ export default function Home() {
     setAppStep("login");
   }
 
+  async function logout() {
+    setApiError("");
+
+    try {
+      await logoutSession();
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "Logout failed.");
+    } finally {
+      setSessionId(undefined);
+      setPassword("");
+      setDraft("");
+      setMessages([]);
+      setRevealedProfileMessageId(null);
+      setSelectedRoomId(rooms[0].id);
+      setSelectedAvatarIds(initialAvatarSelections);
+      returnToLogin();
+    }
+  }
+
   async function sendLine(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = draft.trim();
@@ -236,6 +265,36 @@ export default function Home() {
       requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0 }));
     }
   }, [appStep]);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    fetchCurrentSession()
+      .then((result) => {
+        if (!isCurrent || !result) {
+          return;
+        }
+
+        setDisplayName(result.user.displayName);
+        setSessionId(result.session.id);
+        applyProfile(result.user.profile);
+        setAppStep("scene");
+      })
+      .catch(() => {
+        if (isCurrent) {
+          setSessionId(undefined);
+        }
+      })
+      .finally(() => {
+        if (isCurrent) {
+          setIsRestoringSession(false);
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (appStep !== "chat") {
@@ -371,9 +430,14 @@ export default function Home() {
               ))}
             </div>
 
-            <button className="portal-return" key="chat-back" onClick={() => setAppStep("scene")} type="button">
-              Back to Setup
-            </button>
+            <div className="nav-actions">
+              <button className="portal-return" key="chat-back" onClick={() => setAppStep("scene")} type="button">
+                Back to Setup
+              </button>
+              <button className="portal-return" key="chat-logout" onClick={logout} type="button">
+                Logout
+              </button>
+            </div>
           </motion.aside>
 
           <motion.div
@@ -542,7 +606,7 @@ export default function Home() {
     <main className="kokoroe-shell">
       <div className="paper-grain" aria-hidden="true" />
       <AnimatePresence mode="wait">
-      {appStep === "login" ? (
+      {isRestoringSession ? null : appStep === "login" ? (
         <motion.section
           {...screenMotion}
           className="login-page ink-panel"
@@ -762,8 +826,8 @@ export default function Home() {
           </div>
 
           <div className="scene-select-footer" key="scene-footer">
-            <button className="portal-return" onClick={returnToLogin} type="button">
-              Back to Login
+            <button className="portal-return" onClick={logout} type="button">
+              Logout
             </button>
             <button className="enter-button" onClick={enterChatWithAvatar} type="button">
               Enter {selectedRoom.name} as {selectedAvatar.name}

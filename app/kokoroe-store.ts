@@ -325,6 +325,24 @@ export async function getDevSession(sessionId: unknown) {
   return { user, session, status: 200 } as const;
 }
 
+export async function destroyDevSession(sessionId: unknown) {
+  if (typeof sessionId !== "string" || !sessionId.trim()) {
+    return { status: 204 } as const;
+  }
+
+  const store = await getStore();
+  const nextSessions = store.sessions.filter((session) => session.id !== sessionId.trim());
+
+  if (nextSessions.length === store.sessions.length) {
+    return { status: 204 } as const;
+  }
+
+  store.sessions = nextSessions;
+  await saveStore(store);
+
+  return { status: 204 } as const;
+}
+
 export async function updateProfile(input: ProfileUpdateInput) {
   const result = await getSessionUser(input.sessionId);
 
