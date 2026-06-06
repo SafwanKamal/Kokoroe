@@ -33,7 +33,7 @@ Do not overbuild backend or AI infrastructure before the core app works.
 
 The backend phase has started with simple Next.js route handlers and swappable local persistence adapters. The frontend now uses the API for account creation, credential login, cookie-restored dev sessions, profile preferences, and message reads/writes. Server-side message creation validates the session, room, avatar, character limit, and presentation. Sessions now carry expiration timestamps and stale cookie restores are rejected/cleared. Next steps are table-specific repository methods following `docs/DATABASE.md` and expanding backend coverage beyond the current happy path.
 
-Supabase Postgres support is scaffolded behind `KOKOROE_STORE=supabase`, with the initial migration applied and the server-only REST adapter verified against the hosted project. Vercel can now be switched to the Supabase store after adding the required environment variables. Before adding client-side realtime subscriptions, enable and design RLS policies for the Kokoroe tables.
+Supabase Postgres support is scaffolded behind `KOKOROE_STORE=supabase`, with the initial migration applied, RLS enabled, and the server-only REST adapter verified against the hosted project. Vercel can now use the Supabase store. Before adding client-side realtime subscriptions, design narrow RLS read policies for the Kokoroe tables.
 
 ## Medium-Term Goals
 

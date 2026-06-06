@@ -33,7 +33,7 @@ SQLite is the right next step because Kokoroe is still shaping its data model, a
 For deployment with realtime, the likely production path is Supabase Postgres: route handlers keep doing validation/writes, and clients subscribe to committed room message changes.
 The first Supabase adapter still honors the broad state-shaped adapter contract so production can move to Postgres without rewriting route contracts. It uses Supabase's REST API with the server-only service role key because the direct database hostname is not IPv4-compatible from every environment. Replace this with table-specific repository methods before serious multi-user traffic.
 
-The initial Supabase migration has been applied to the hosted project. Supabase currently reports Row Level Security disabled on the Kokoroe tables. Because Kokoroe writes through server routes with a service role key, RLS can be enabled before client-side realtime is introduced, but policies need to be planned deliberately so future anon-key subscriptions only see allowed rows.
+The initial Supabase migration has been applied to the hosted project. Row Level Security is enabled on Kokoroe tables. The current server-route adapter uses the service role key and bypasses RLS; future client-side realtime needs deliberate read policies so anon-key subscriptions only see allowed rows.
 
 ## Initial Tables
 
