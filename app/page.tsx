@@ -26,6 +26,7 @@ import {
   messagePresentations,
   resolvePresentationId,
 } from "./message-presentations";
+import { subscribeToRoomMessages } from "./realtime";
 
 type AppStep = "login" | "scene" | "chat";
 type AuthMode = "login" | "create";
@@ -83,6 +84,14 @@ function shouldShowTimestamp(message: ChatMessage, previousMessage?: ChatMessage
 
 function mergeRoomMessages(currentMessages: ChatMessage[], roomId: string, roomMessages: ChatMessage[]) {
   return [...currentMessages.filter((message) => message.roomId !== roomId), ...roomMessages];
+}
+
+function appendMessageIfNew(currentMessages: ChatMessage[], message: ChatMessage) {
+  if (currentMessages.some((currentMessage) => currentMessage.id === message.id)) {
+    return currentMessages;
+  }
+
+  return [...currentMessages, message];
 }
 
 export default function Home() {
@@ -341,6 +350,20 @@ export default function Home() {
       isCurrent = false;
     };
   }, [selectedRoom.id]);
+
+  useEffect(() => {
+    if (appStep !== "chat") {
+      return;
+    }
+
+    const channel = subscribeToRoomMessages(selectedRoom.id, (message) => {
+      setMessages((currentMessages) => appendMessageIfNew(currentMessages, message));
+    });
+
+    return () => {
+      void channel?.unsubscribe();
+    };
+  }, [appStep, selectedRoom.id]);
 
   useEffect(() => {
     if (!sessionId) {

@@ -35,6 +35,8 @@ The first Supabase adapter still honors the broad state-shaped adapter contract 
 
 The initial Supabase migration has been applied to the hosted project. Row Level Security is enabled on Kokoroe tables. The current server-route adapter uses the service role key and bypasses RLS; future client-side realtime needs deliberate read policies so anon-key subscriptions only see allowed rows.
 
+Realtime currently exposes `messages` inserts to browser clients with the publishable key. The only public RLS policy is `SELECT` on `messages`; all writes still go through Kokoroe API routes with server-side validation.
+
 ## Initial Tables
 
 - `users`: account identity, display name, timestamps

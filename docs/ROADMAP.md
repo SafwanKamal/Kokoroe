@@ -35,6 +35,8 @@ The backend phase has started with simple Next.js route handlers and swappable l
 
 Supabase Postgres support is scaffolded behind `KOKOROE_STORE=supabase`, with the initial migration applied, RLS enabled, and the server-only REST adapter verified against the hosted project. Vercel can now use the Supabase store. Before adding client-side realtime subscriptions, design narrow RLS read policies for the Kokoroe tables.
 
+Message realtime is now the active sync direction: the browser may subscribe to `messages` inserts for the active room through Supabase Realtime, while message writes remain server-owned API calls.
+
 ## Medium-Term Goals
 
 After the base chat app is working, improve the experience with:
