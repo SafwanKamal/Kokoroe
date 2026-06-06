@@ -22,20 +22,22 @@ The current adapter contract is intentionally small:
 - `getState()`: load the complete development state.
 - `saveState(store)`: persist the updated state.
 
-This matches the JSON adapter today and gives us a clean seam for SQLite/Postgres later. The SQLite adapter now writes relational tables for users, sessions, profiles, avatar selections, and messages while still reconstructing the full state object for the current domain layer. A later repository pass should replace broad full-state saves with table-specific writes without changing route contracts.
+This matches the JSON adapter today and gives us a clean seam for SQLite/Postgres later. The SQLite adapter now writes relational tables for users, sessions, profiles, avatar selections, and messages while still reconstructing the full state object for the current domain layer.
+
+The adapter contract also supports optional table-specific hooks for production-oriented stores. Supabase implements narrow account/session/profile/message writes so message creation inserts one `messages` row instead of rewriting the whole state. JSON and SQLite can continue using `saveState(store)` until they need the same optimization.
 
 ## Next Database Step
 
-Move from full-state adapter methods to table-specific repository methods before adding hosted infrastructure.
+Continue moving any high-traffic store behavior from full-state adapter methods to table-specific repository methods.
 
 SQLite is the right next step because Kokoroe is still shaping its data model, and local development should remain cheap, inspectable, and easy to reset. The schema should be written so it can later move to Postgres with minimal model changes.
 
 For deployment with realtime, the likely production path is Supabase Postgres: route handlers keep doing validation/writes, and clients subscribe to committed room message changes.
-The first Supabase adapter still honors the broad state-shaped adapter contract so production can move to Postgres without rewriting route contracts. It uses Supabase's REST API with the server-only service role key because the direct database hostname is not IPv4-compatible from every environment. Replace this with table-specific repository methods before serious multi-user traffic.
+The Supabase adapter still honors the broad state-shaped adapter contract so production can move to Postgres without rewriting route contracts. It uses Supabase's REST API with the server-only service role key because the direct database hostname is not IPv4-compatible from every environment. Prefer its table-specific hooks for account/session/profile/message mutations before serious multi-user traffic.
 
 The initial Supabase migration has been applied to the hosted project. Row Level Security is enabled on Kokoroe tables. The current server-route adapter uses the service role key and bypasses RLS; future client-side realtime needs deliberate read policies so anon-key subscriptions only see allowed rows.
 
-Realtime currently exposes `messages` inserts to browser clients with the publishable key. The only public RLS policy is `SELECT` on `messages`; all writes still go through Kokoroe API routes with server-side validation.
+Realtime currently exposes `messages` inserts to browser clients with the publishable key. The only public RLS policy is `SELECT` on `messages`; all writes still go through Kokoroe API routes with server-side validation. The client subscribes to message inserts and filters by room id in application code so room ids with punctuation do not depend on realtime filter parsing.
 
 ## Initial Tables
 

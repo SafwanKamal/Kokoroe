@@ -38,4 +38,10 @@ export type StoreState = {
 export type KokoroeStoreAdapter = {
   getState(): Promise<StoreState>;
   saveState(store: StoreState): Promise<void>;
+  insertUserWithSession?(store: StoreState, user: KokoroeUser, session: KokoroeSession): Promise<void>;
+  insertSession?(store: StoreState, user: KokoroeUser, session: KokoroeSession): Promise<void>;
+  replaceSessions?(store: StoreState): Promise<void>;
+  updateSession?(store: StoreState, session: KokoroeSession): Promise<void>;
+  updateUserProfile?(store: StoreState, user: KokoroeUser, session: KokoroeSession): Promise<void>;
+  insertMessage?(store: StoreState, user: KokoroeUser, session: KokoroeSession, message: ChatMessage): Promise<void>;
 };

@@ -54,9 +54,14 @@ export function subscribeToRoomMessages(
         event: "INSERT",
         schema: "public",
         table: "messages",
-        filter: `room_id=eq.${roomId}`,
       },
-      (payload) => onMessage(toChatMessage(payload.new as RealtimeMessageRow)),
+      (payload) => {
+        const row = payload.new as RealtimeMessageRow;
+
+        if (row.room_id === roomId) {
+          onMessage(toChatMessage(row));
+        }
+      },
     )
     .subscribe();
 }

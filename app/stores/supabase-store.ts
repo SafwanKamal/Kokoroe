@@ -1,6 +1,6 @@
 import type { ChatMessage } from "../chat-data";
 import { createSeedStore } from "./seed";
-import type { KokoroeStoreAdapter, KokoroeUser, StoreState } from "./types";
+import type { KokoroeSession, KokoroeStoreAdapter, KokoroeUser, StoreState } from "./types";
 
 type MetaRow = {
   counter: number;
@@ -134,16 +134,93 @@ async function insertRows<T extends Record<string, unknown>>(table: string, rows
   });
 }
 
-async function upsertRows<T extends Record<string, unknown>>(table: string, rows: T[]) {
+async function upsertRows<T extends Record<string, unknown>>(table: string, rows: T[], onConflict?: string) {
   if (rows.length === 0) {
     return;
   }
 
-  await requestSupabase(table, {
+  const path = onConflict ? `${table}?on_conflict=${encodeURIComponent(onConflict)}` : table;
+
+  await requestSupabase(path, {
     method: "POST",
     body: JSON.stringify(rows),
     headers: { prefer: "resolution=merge-duplicates,return=minimal" },
   });
+}
+
+async function updateRows<T extends Record<string, unknown>>(table: string, filter: string, values: T) {
+  await requestSupabase(`${table}?${filter}`, {
+    method: "PATCH",
+    body: JSON.stringify(values),
+    headers: { prefer: "return=minimal" },
+  });
+}
+
+function toMetaRow(store: StoreState) {
+  return {
+    key: stateKey,
+    version: store.version,
+    counter: store.counter,
+  };
+}
+
+function toUserRow(user: KokoroeUser) {
+  return {
+    id: user.id,
+    display_name: user.displayName,
+    email: toNullable(user.email),
+    username: toNullable(user.username),
+    password_hash: toNullable(user.passwordHash),
+    password_salt: toNullable(user.passwordSalt),
+    created_at: user.createdAt,
+    updated_at: user.updatedAt,
+  };
+}
+
+function toProfileRow(user: KokoroeUser) {
+  return {
+    user_id: user.id,
+    current_room_id: user.profile.currentRoomId,
+  };
+}
+
+function toAvatarSelectionRows(user: KokoroeUser) {
+  return Object.entries(user.profile.selectedAvatarIds).map(([roomId, avatarId]) => ({
+    user_id: user.id,
+    room_id: roomId,
+    avatar_id: avatarId,
+  }));
+}
+
+function toSessionRow(session: KokoroeSession) {
+  return {
+    id: session.id,
+    user_id: session.userId,
+    created_at: session.createdAt,
+    expires_at: session.expiresAt,
+    last_seen_at: session.lastSeenAt,
+  };
+}
+
+function toMessageRow(message: ChatMessage) {
+  return {
+    id: message.id,
+    room_id: message.roomId,
+    avatar_id: toNullable(message.avatarId),
+    user_id: toNullable(message.userId),
+    author: message.author,
+    text: message.text,
+    tone: message.tone,
+    time_label: message.time,
+    created_at: toTimestamp(message.createdAt),
+    is_mine: message.mine ?? false,
+  };
+}
+
+async function saveProfileRows(user: KokoroeUser) {
+  await upsertRows("users", [toUserRow(user)]);
+  await upsertRows("user_profiles", [toProfileRow(user)]);
+  await upsertRows("user_avatar_selections", toAvatarSelectionRows(user), "user_id,room_id");
 }
 
 async function ensureSeedState() {
@@ -223,59 +300,20 @@ async function writeSupabaseState(store: StoreState) {
   await deleteRows("users", "id=not.is.null");
   await deleteRows("store_meta", "key=not.is.null");
 
-  await upsertRows("store_meta", [{
-    key: stateKey,
-    version: store.version,
-    counter: store.counter,
-  }]);
+  await upsertRows("store_meta", [toMetaRow(store)]);
 
-  await insertRows("users", store.users.map((user) => ({
-    id: user.id,
-    display_name: user.displayName,
-    email: toNullable(user.email),
-    username: toNullable(user.username),
-    password_hash: toNullable(user.passwordHash),
-    password_salt: toNullable(user.passwordSalt),
-    created_at: user.createdAt,
-    updated_at: user.updatedAt,
-  })));
+  await insertRows("users", store.users.map(toUserRow));
 
-  await insertRows("user_profiles", store.users.map((user) => ({
-    user_id: user.id,
-    current_room_id: user.profile.currentRoomId,
-  })));
+  await insertRows("user_profiles", store.users.map(toProfileRow));
 
   await insertRows(
     "user_avatar_selections",
-    store.users.flatMap((user) => (
-      Object.entries(user.profile.selectedAvatarIds).map(([roomId, avatarId]) => ({
-        user_id: user.id,
-        room_id: roomId,
-        avatar_id: avatarId,
-      }))
-    )),
+    store.users.flatMap(toAvatarSelectionRows),
   );
 
-  await insertRows("sessions", store.sessions.map((session) => ({
-    id: session.id,
-    user_id: session.userId,
-    created_at: session.createdAt,
-    expires_at: session.expiresAt,
-    last_seen_at: session.lastSeenAt,
-  })));
+  await insertRows("sessions", store.sessions.map(toSessionRow));
 
-  await insertRows("messages", store.messages.map((message) => ({
-    id: message.id,
-    room_id: message.roomId,
-    avatar_id: toNullable(message.avatarId),
-    user_id: toNullable(message.userId),
-    author: message.author,
-    text: message.text,
-    tone: message.tone,
-    time_label: message.time,
-    created_at: toTimestamp(message.createdAt),
-    is_mine: message.mine ?? false,
-  })));
+  await insertRows("messages", store.messages.map(toMessageRow));
 }
 
 export function createSupabaseStoreAdapter(): KokoroeStoreAdapter {
@@ -287,6 +325,47 @@ export function createSupabaseStoreAdapter(): KokoroeStoreAdapter {
     async saveState(store) {
       globalSupabaseStore.__kokoroeSupabaseState = store;
       await writeSupabaseState(store);
+    },
+    async insertUserWithSession(store, user, session) {
+      globalSupabaseStore.__kokoroeSupabaseState = store;
+      await upsertRows("store_meta", [toMetaRow(store)]);
+      await insertRows("users", [toUserRow(user)]);
+      await insertRows("user_profiles", [toProfileRow(user)]);
+      await insertRows("user_avatar_selections", toAvatarSelectionRows(user));
+      await insertRows("sessions", [toSessionRow(session)]);
+    },
+    async insertSession(store, user, session) {
+      globalSupabaseStore.__kokoroeSupabaseState = store;
+      await updateRows("users", `id=eq.${encodeURIComponent(user.id)}`, { updated_at: user.updatedAt });
+      await insertRows("sessions", [toSessionRow(session)]);
+    },
+    async replaceSessions(store) {
+      globalSupabaseStore.__kokoroeSupabaseState = store;
+      await deleteRows("sessions", "id=not.is.null");
+      await insertRows("sessions", store.sessions.map(toSessionRow));
+    },
+    async updateSession(store, session) {
+      globalSupabaseStore.__kokoroeSupabaseState = store;
+      await updateRows("sessions", `id=eq.${encodeURIComponent(session.id)}`, {
+        expires_at: session.expiresAt,
+        last_seen_at: session.lastSeenAt,
+      });
+    },
+    async updateUserProfile(store, user, session) {
+      globalSupabaseStore.__kokoroeSupabaseState = store;
+      await saveProfileRows(user);
+      await updateRows("sessions", `id=eq.${encodeURIComponent(session.id)}`, {
+        last_seen_at: session.lastSeenAt,
+      });
+    },
+    async insertMessage(store, user, session, message) {
+      globalSupabaseStore.__kokoroeSupabaseState = store;
+      await upsertRows("store_meta", [toMetaRow(store)]);
+      await saveProfileRows(user);
+      await updateRows("sessions", `id=eq.${encodeURIComponent(session.id)}`, {
+        last_seen_at: session.lastSeenAt,
+      });
+      await insertRows("messages", [toMessageRow(message)]);
     },
   };
 }

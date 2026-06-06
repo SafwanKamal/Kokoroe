@@ -196,6 +196,65 @@ async function saveStore(store: StoreState) {
   await storeAdapter.saveState(store);
 }
 
+async function persistNewAccount(store: StoreState, user: KokoroeUser, session: KokoroeSession) {
+  if (storeAdapter.insertUserWithSession) {
+    await storeAdapter.insertUserWithSession(store, user, session);
+    return;
+  }
+
+  await saveStore(store);
+}
+
+async function persistLoginSession(store: StoreState, user: KokoroeUser, session: KokoroeSession) {
+  if (storeAdapter.insertSession) {
+    await storeAdapter.insertSession(store, user, session);
+    return;
+  }
+
+  await saveStore(store);
+}
+
+async function persistSessions(store: StoreState) {
+  if (storeAdapter.replaceSessions) {
+    await storeAdapter.replaceSessions(store);
+    return;
+  }
+
+  await saveStore(store);
+}
+
+async function persistSessionTouch(store: StoreState, session: KokoroeSession) {
+  if (storeAdapter.updateSession) {
+    await storeAdapter.updateSession(store, session);
+    return;
+  }
+
+  await saveStore(store);
+}
+
+async function persistProfile(store: StoreState, user: KokoroeUser, session: KokoroeSession) {
+  if (storeAdapter.updateUserProfile) {
+    await storeAdapter.updateUserProfile(store, user, session);
+    return;
+  }
+
+  await saveStore(store);
+}
+
+async function persistMessage(
+  store: StoreState,
+  user: KokoroeUser,
+  session: KokoroeSession,
+  message: ChatMessage,
+) {
+  if (storeAdapter.insertMessage) {
+    await storeAdapter.insertMessage(store, user, session, message);
+    return;
+  }
+
+  await saveStore(store);
+}
+
 function findUserByCredential(store: StoreState, identifier: string) {
   const normalizedIdentifier = identifier.toLowerCase();
 
@@ -233,7 +292,7 @@ async function getSessionUser(sessionId: unknown) {
 
   if (isSessionExpired(session)) {
     store.sessions = store.sessions.filter((candidateSession) => candidateSession.id !== normalizedSessionId);
-    await saveStore(store);
+    await persistSessions(store);
     return { error: "Session expired. Log in again.", status: 401 } as const;
   }
 
@@ -303,7 +362,7 @@ export async function createDevSession(input: DevLoginInput) {
   user.updatedAt = now;
   const session = createSession(user.id);
   store.sessions.push(session);
-  await saveStore(store);
+  await persistLoginSession(store, user, session);
 
   return { user, session, status: 201 } as const;
 }
@@ -350,7 +409,7 @@ export async function createAccount(input: DevLoginInput) {
 
   store.users.push(user);
   store.sessions.push(session);
-  await saveStore(store);
+  await persistNewAccount(store, user, session);
 
   return { user, session, status: 201 } as const;
 }
@@ -364,7 +423,7 @@ export async function getDevSession(sessionId: unknown) {
 
   const { session, store, user } = result;
   session.lastSeenAt = new Date().toISOString();
-  await saveStore(store);
+  await persistSessionTouch(store, session);
 
   return { user, session, status: 200 } as const;
 }
@@ -383,7 +442,7 @@ export async function destroyDevSession(sessionId: unknown) {
   }
 
   store.sessions = nextSessions;
-  await saveStore(store);
+  await persistSessions(store);
 
   return { status: 204 } as const;
 }
@@ -437,7 +496,7 @@ export async function updateProfile(input: ProfileUpdateInput) {
   user.profile = nextProfile;
   user.updatedAt = now;
   session.lastSeenAt = now;
-  await saveStore(store);
+  await persistProfile(store, user, session);
 
   return { profile: user.profile, user, status: 200 } as const;
 }
@@ -504,7 +563,7 @@ export async function createMessage(input: MessageCreateInput) {
   };
 
   store.messages.push(message);
-  await saveStore(store);
+  await persistMessage(store, user, sessionResult.session, message);
 
   return { message, status: 201 } as const;
 }
