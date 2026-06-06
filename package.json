@@ -7,11 +7,13 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "avatar:add": "node scripts/add-avatar.mjs"
+    "avatar:add": "node scripts/add-avatar.mjs",
+    "db:migrate:supabase": "node scripts/migrate-supabase.mjs"
   },
   "dependencies": {
     "motion": "^12.40.0",
     "next": "latest",
+    "postgres": "^3.4.9",
     "react": "latest",
     "react-dom": "latest"
   },

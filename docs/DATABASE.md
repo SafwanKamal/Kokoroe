@@ -13,6 +13,7 @@ Use `.data/kokoroe-dev-store.json` as the default local development adapter.
 - The adapter boundary lives under `app/stores/`. Domain logic should call a store adapter, not file-system APIs directly.
 
 Set `KOKOROE_STORE=sqlite` to use the SQLite adapter at `.data/kokoroe-dev.sqlite`.
+Set `KOKOROE_STORE=supabase` with `SUPABASE_DIRECT_URL` or `DATABASE_URL` to use hosted Supabase Postgres. Prefer Supabase's transaction pooler connection string as `DATABASE_URL` for Vercel/serverless deployments.
 
 ## Store Adapter Contract
 
@@ -30,6 +31,7 @@ Move from full-state adapter methods to table-specific repository methods before
 SQLite is the right next step because Kokoroe is still shaping its data model, and local development should remain cheap, inspectable, and easy to reset. The schema should be written so it can later move to Postgres with minimal model changes.
 
 For deployment with realtime, the likely production path is Supabase Postgres: route handlers keep doing validation/writes, and clients subscribe to committed room message changes.
+The first Supabase adapter still honors the broad state-shaped adapter contract so production can move to Postgres without rewriting route contracts. Replace this with table-specific repository methods before serious multi-user traffic.
 
 ## Initial Tables
 

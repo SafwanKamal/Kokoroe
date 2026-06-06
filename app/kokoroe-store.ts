@@ -13,6 +13,7 @@ import {
 } from "./message-presentations";
 import { createJsonStoreAdapter } from "./stores/json-store";
 import { createSqliteStoreAdapter } from "./stores/sqlite-store";
+import { createSupabaseStoreAdapter } from "./stores/supabase-store";
 import type {
   KokoroeProfile,
   KokoroePublicUser,
@@ -51,9 +52,11 @@ type ProfileUpdateInput = {
 const hashLength = 64;
 const sessionLifetimeMs = 1000 * 60 * 60 * 24 * 30;
 const scrypt = promisify(scryptCallback);
-const storeAdapter = process.env.KOKOROE_STORE === "sqlite"
-  ? createSqliteStoreAdapter()
-  : createJsonStoreAdapter();
+const storeAdapter = process.env.KOKOROE_STORE === "supabase"
+  ? createSupabaseStoreAdapter()
+  : process.env.KOKOROE_STORE === "sqlite"
+    ? createSqliteStoreAdapter()
+    : createJsonStoreAdapter();
 
 function createDefaultProfile(): KokoroeProfile {
   return {
