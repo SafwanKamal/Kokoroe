@@ -49,6 +49,7 @@ type ProfileUpdateInput = {
 };
 
 const hashLength = 64;
+const sessionLifetimeMs = 1000 * 60 * 60 * 24 * 30;
 const scrypt = promisify(scryptCallback);
 const storeAdapter = process.env.KOKOROE_STORE === "sqlite"
   ? createSqliteStoreAdapter()
@@ -141,6 +142,28 @@ async function verifyPassword(password: string, passwordHash: string, passwordSa
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
+function getSessionExpiresAt(createdAt: string) {
+  const createdTime = Date.parse(createdAt);
+  const baseTime = Number.isFinite(createdTime) ? createdTime : Date.now();
+  return new Date(baseTime + sessionLifetimeMs).toISOString();
+}
+
+function isSessionExpired(session: KokoroeSession, now = Date.now()) {
+  const expiresTime = Date.parse(session.expiresAt);
+  return Number.isFinite(expiresTime) && expiresTime <= now;
+}
+
+function pruneExpiredSessions(store: StoreState, now = Date.now()) {
+  const activeSessions = store.sessions.filter((session) => !isSessionExpired(session, now));
+
+  if (activeSessions.length === store.sessions.length) {
+    return false;
+  }
+
+  store.sessions = activeSessions;
+  return true;
+}
+
 async function getStore() {
   const store = await storeAdapter.getState();
   let didMigrate = false;
@@ -148,6 +171,13 @@ async function getStore() {
   for (const user of store.users) {
     if (!(user as Partial<KokoroeUser>).profile) {
       user.profile = createDefaultProfile();
+      didMigrate = true;
+    }
+  }
+
+  for (const session of store.sessions) {
+    if (!(session as Partial<KokoroeSession>).expiresAt) {
+      session.expiresAt = getSessionExpiresAt(session.createdAt);
       didMigrate = true;
     }
   }
@@ -174,13 +204,14 @@ function findUserByCredential(store: StoreState, identifier: string) {
 }
 
 function createSession(userId: string): KokoroeSession {
-  const now = new Date().toISOString();
+  const now = new Date();
 
   return {
     id: `session-${randomUUID()}`,
     userId,
-    createdAt: now,
-    lastSeenAt: now,
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + sessionLifetimeMs).toISOString(),
+    lastSeenAt: now.toISOString(),
   };
 }
 
@@ -190,10 +221,17 @@ async function getSessionUser(sessionId: unknown) {
   }
 
   const store = await getStore();
-  const session = store.sessions.find((candidateSession) => candidateSession.id === sessionId.trim());
+  const normalizedSessionId = sessionId.trim();
+  const session = store.sessions.find((candidateSession) => candidateSession.id === normalizedSessionId);
 
   if (!session) {
     return { error: "Session not found.", status: 404 } as const;
+  }
+
+  if (isSessionExpired(session)) {
+    store.sessions = store.sessions.filter((candidateSession) => candidateSession.id !== normalizedSessionId);
+    await saveStore(store);
+    return { error: "Session expired. Log in again.", status: 401 } as const;
   }
 
   const user = store.users.find((candidateUser) => candidateUser.id === session.userId);
@@ -334,9 +372,10 @@ export async function destroyDevSession(sessionId: unknown) {
   }
 
   const store = await getStore();
+  const didPrune = pruneExpiredSessions(store);
   const nextSessions = store.sessions.filter((session) => session.id !== sessionId.trim());
 
-  if (nextSessions.length === store.sessions.length) {
+  if (nextSessions.length === store.sessions.length && !didPrune) {
     return { status: 204 } as const;
   }
 
@@ -353,7 +392,8 @@ export async function updateProfile(input: ProfileUpdateInput) {
     return result;
   }
 
-  const { store, user } = result;
+  const { session, store, user } = result;
+  const now = new Date().toISOString();
   const nextProfile: KokoroeProfile = {
     currentRoomId: user.profile.currentRoomId,
     selectedAvatarIds: { ...user.profile.selectedAvatarIds },
@@ -392,7 +432,8 @@ export async function updateProfile(input: ProfileUpdateInput) {
   }
 
   user.profile = nextProfile;
-  user.updatedAt = new Date().toISOString();
+  user.updatedAt = now;
+  session.lastSeenAt = now;
   await saveStore(store);
 
   return { profile: user.profile, user, status: 200 } as const;
@@ -443,6 +484,7 @@ export async function createMessage(input: MessageCreateInput) {
   user.profile.currentRoomId = room.id;
   user.profile.selectedAvatarIds[room.id] = avatar.id;
   user.updatedAt = now.toISOString();
+  sessionResult.session.lastSeenAt = now.toISOString();
   store.counter += 1;
 
   const message: ChatMessage = {

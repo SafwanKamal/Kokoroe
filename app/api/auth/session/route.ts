@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDevSession, getPublicUser } from "../../../kokoroe-store";
-import { getSessionIdFromRequest } from "../session-cookie";
+import { getSessionIdFromRequest, sessionErrorResponse } from "../session-cookie";
 
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get("sessionId") ?? getSessionIdFromRequest(request);
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const result = await getDevSession(sessionId);
 
   if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    return sessionErrorResponse(result.error ?? "Session failed.", result.status);
   }
 
   return NextResponse.json(

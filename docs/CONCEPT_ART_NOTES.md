@@ -16,6 +16,32 @@ When concept art is generated:
 
 ## Selected Direction
 
+## Selected Direction: Expressive Conversational Evolution
+
+The core chat experience represents how real-world digital messaging transforms from standard mobile chat exchanges into an imaginative, co-created manga adventure. This visual direction is captured in [chat_evolution_art.png](file:///Users/safwankamal/Desktop/Code/Kokoroe/docs/RerferenceImages/Concept/chat_evolution_art.png).
+
+### Visual Elements to Keep
+
+- **Dual-Phone Showcase Layout**: Two high-fidelity vertical smartphone mockups displayed side-by-side on a warm cream paper background, keeping the messaging platform interface at the absolute center of focus.
+- **Left Smartphone UI (Initial State / Simple Texting)**:
+  - Sidebar showing other scenes with individual manga illustrations.
+  - A pinned "Today's Panel" widget at the top displaying a sketch of the current environment (e.g., a rainy library window).
+  - A clean vertical chat feed displaying blank dialogue bubbles in various expressive speech styles (cloud-like whisper, jagged shout, hand-drawn mutter, dark scratched scribble) with respective color-coded labels (WHISPER, SHOUT, MUTTER, SCRIBBLE) next to character portraits.
+  - A detailed bottom text input bar saying "What's on your mind?" next to a hand-drawn red "SEND" button.
+- **Right Smartphone UI (Evolved State / Manga Integration)**:
+  - Shows the same room and header, but the chat feed background has transformed into a beautiful, sequential manga page.
+  - The blank chat bubbles have expanded and integrated directly as speech bubbles inside co-created panel scenes (showing the avatars eating ramen together under glowing lanterns).
+  - Keeps the bottom "What's on your mind?" input bar and "SEND" button.
+- **Color Palette & Texture**:
+  - Fine hand-inked borders and brush outlines over a warm cream paper base.
+  - High-fidelity vector phone frames blending with hand-drawn artwork.
+  - Curated Kokoroe selective color accents: ramen gold, sky wash blue, and plot coral.
+
+### Visual Elements to Avoid
+
+- **Text-In-Bubbles Asset Baking**: All chat bubbles and panels must support dynamic browser rendering of raw HTML/CSS text rather than hardcoded image assets.
+- **Confusing Layouts**: Maintain standard mobile messaging navigation, timestamps, and input bar placements so the app remains instantly familiar and accessible to users.
+
 ## Selected Direction: Manga Scene Portal Auth
 
 Use the authentication concept that feels like a manga magazine spread: a left sign-in window with Kokoroe branding, illustrated character art, expressive form controls, and a dream-world entry action; paired with a right-side dream-world selector made of large illustrated manga panels. This auth surface should feel like entering a story world, not a generic login modal.

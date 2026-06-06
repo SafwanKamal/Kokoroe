@@ -710,7 +710,7 @@ export default function Home() {
               <p>Get isekaied to a world, then pick the character identity you will enter as.</p>
             </div>
             <div className="scene-tip" aria-hidden="true">
-              {selectedRoom.mood}
+              <span>{selectedRoom.mood}</span>
             </div>
           </div>
 

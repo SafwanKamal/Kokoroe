@@ -38,6 +38,10 @@ Future feature idea:
 
 Before rewriting a message, an AI model may classify the message context.
 
+Use lightweight models where practical for low-latency tasks such as identifying
+emotion, intent, and message intensity. These models should choose bounded,
+allow-listed presentation behavior rather than generating arbitrary UI values.
+
 Possible context signals:
 
 - Is the message serious or playful?
@@ -73,6 +77,12 @@ Sometimes the best output is subtle.
 Future feature idea:
 
 The app may generate manga-style visual moments for messages.
+
+Longer-term art generation may use sustained conversation context across multiple
+participants to create coherent, relevant assets such as approved avatar
+portraits, room themes, and occasional scene art. Generated assets should remain
+consistent with the selected world and conversation rather than behave like
+isolated image prompts.
 
 The goal is not smooth generic animation. The goal is keyframe-like motion that feels like manga panels conveying action.
 

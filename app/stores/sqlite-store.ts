@@ -50,6 +50,7 @@ type AvatarSelectionRow = {
 
 type SessionRow = {
   created_at: string;
+  expires_at?: string | null;
   id: string;
   last_seen_at: string;
   user_id: string;
@@ -130,6 +131,7 @@ async function getDatabase() {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
       created_at TEXT NOT NULL,
+      expires_at TEXT,
       last_seen_at TEXT NOT NULL,
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -147,6 +149,12 @@ async function getDatabase() {
       is_mine INTEGER NOT NULL DEFAULT 0
     );
   `);
+
+  try {
+    database.exec("ALTER TABLE sessions ADD COLUMN expires_at TEXT");
+  } catch {
+  }
+
   globalSqliteStore.__kokoroeSqliteDb = database;
   return database;
 }
@@ -226,12 +234,12 @@ function writeSqliteStateSync(database: SqliteDatabase, store: StoreState) {
     }
 
     const insertSession = database.prepare(`
-      INSERT INTO sessions (id, user_id, created_at, last_seen_at)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO sessions (id, user_id, created_at, expires_at, last_seen_at)
+      VALUES (?, ?, ?, ?, ?)
     `);
 
     for (const session of store.sessions) {
-      insertSession.run(session.id, session.userId, session.createdAt, session.lastSeenAt);
+      insertSession.run(session.id, session.userId, session.createdAt, session.expiresAt, session.lastSeenAt);
     }
 
     const insertMessage = database.prepare(`
@@ -318,6 +326,7 @@ function readSqliteStateSync(database: SqliteDatabase) {
       id: session.id,
       userId: session.user_id,
       createdAt: session.created_at,
+      expiresAt: session.expires_at ?? "",
       lastSeenAt: session.last_seen_at,
     })),
     messages: messages.map((message): ChatMessage => ({

@@ -31,7 +31,7 @@ When building the first version, focus on:
 
 Do not overbuild backend or AI infrastructure before the core app works.
 
-The backend phase has started with simple Next.js route handlers and swappable local persistence adapters. The frontend now uses the API for account creation, credential login, cookie-restored dev sessions, profile preferences, and message reads/writes. Server-side message creation validates the session, room, avatar, character limit, and presentation. Next steps are session expiration, table-specific repository methods following `docs/DATABASE.md`, and expanding backend coverage beyond the current happy path.
+The backend phase has started with simple Next.js route handlers and swappable local persistence adapters. The frontend now uses the API for account creation, credential login, cookie-restored dev sessions, profile preferences, and message reads/writes. Server-side message creation validates the session, room, avatar, character limit, and presentation. Sessions now carry expiration timestamps and stale cookie restores are rejected/cleared. Next steps are table-specific repository methods following `docs/DATABASE.md` and expanding backend coverage beyond the current happy path.
 
 ## Medium-Term Goals
 

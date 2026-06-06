@@ -752,22 +752,34 @@ h2 {
 }
 
 .login-welcome strong {
-  color: #1e7b83;
+  position: relative;
+  display: inline-block;
+  padding: 0.42rem 1.2rem 0.48rem;
+  color: var(--field-cream);
   font-family: var(--font-lively-stack);
   font-size: 1.45rem;
   font-weight: 400;
+  line-height: 1;
+  isolation: isolate;
 }
 
 .login-welcome strong::before,
 .login-welcome strong::after {
   content: "";
-  display: inline-block;
-  width: 1.2rem;
-  height: 1.2rem;
-  margin: 0 0.65rem;
-  border-top: 3px solid #1e7b83;
-  transform: rotate(35deg);
-  vertical-align: middle;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  clip-path: polygon(3% 7%, 98% 0, 96% 88%, 0 100%);
+}
+
+.login-welcome strong::before {
+  background: var(--ink-black);
+  transform: translate(0.28rem, 0.24rem) rotate(-1.5deg);
+}
+
+.login-welcome strong::after {
+  background: #1e7b83;
+  transform: rotate(0.8deg);
 }
 
 .login-welcome span {
@@ -1064,16 +1076,54 @@ button:disabled {
 }
 
 .scene-tip {
-  width: 10rem;
-  min-height: 6.5rem;
+  position: relative;
+  width: 10.5rem;
+  min-height: 5.4rem;
   display: grid;
   place-items: center;
-  padding: 1rem;
-  border: 3px solid var(--panel-border);
-  border-radius: 50%;
-  background: var(--field-cream);
+  padding: 1rem 1.15rem;
+  isolation: isolate;
+  background: var(--panel-border);
+  clip-path: polygon(8% 2%, 96% 8%, 100% 76%, 89% 100%, 4% 92%, 0 24%);
+  filter: drop-shadow(4px 4px 0 rgba(18, 17, 15, 0.2));
   text-align: center;
   line-height: 1.25;
+  transform: rotate(2deg);
+}
+
+.scene-tip::before,
+.scene-tip::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.scene-tip::before {
+  inset: 3px;
+  z-index: -2;
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--room-wash) 38%, var(--field-cream)), var(--field-cream));
+  clip-path: polygon(8% 2%, 96% 8%, 100% 76%, 89% 100%, 4% 92%, 0 24%);
+}
+
+.scene-tip::after {
+  inset: 0.75rem 0.85rem;
+  z-index: -1;
+  opacity: 0.26;
+  background: repeating-linear-gradient(
+    -16deg,
+    transparent 0 0.38rem,
+    var(--accent) 0.38rem 0.48rem
+  );
+}
+
+.scene-tip span {
+  color: var(--accent);
+  font-family: var(--font-lively-stack);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
 }
 
 .scene-select-list {

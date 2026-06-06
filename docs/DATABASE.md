@@ -35,7 +35,7 @@ For deployment with realtime, the likely production path is Supabase Postgres: r
 
 - `users`: account identity, display name, timestamps
 - `credentials`: username/email identity plus salted password hash, or equivalent columns while the app is small
-- `sessions`: development or auth sessions, user id, timestamps, expiration later
+- `sessions`: development or auth sessions, user id, timestamps, expiration
 - `user_profiles`: current room id and user-level preferences
 - `user_avatar_selections`: one selected avatar per user per room
 - `rooms`: only if runtime-created rooms exist; static catalog rooms can stay in content files for now
@@ -51,6 +51,8 @@ Implemented local SQLite tables:
 - `messages`
 
 The older SQLite snapshot row in `app_state` is read once if present and migrated into relational tables.
+
+Session rows include `expires_at`. Existing development sessions without that field are migrated to a 30-day expiry based on their creation time, and expired sessions are pruned when used.
 
 ## Rules
 

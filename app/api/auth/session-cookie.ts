@@ -27,3 +27,13 @@ export function clearSessionCookie(response: NextResponse) {
     secure: process.env.NODE_ENV === "production",
   });
 }
+
+export function sessionErrorResponse(error: string, status: number) {
+  const response = NextResponse.json({ error }, { status });
+
+  if (status === 401) {
+    clearSessionCookie(response);
+  }
+
+  return response;
+}

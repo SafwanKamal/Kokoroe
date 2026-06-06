@@ -23,6 +23,7 @@ export type KokoroeSession = {
   id: string;
   userId: string;
   createdAt: string;
+  expiresAt: string;
   lastSeenAt: string;
 };
 

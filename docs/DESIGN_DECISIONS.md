@@ -151,6 +151,8 @@ Avatar choice is world-scoped. A character/avatar should be selected after choos
 
 World and avatar selection should share one compact setup page on desktop. Avoid separate full-screen panels when the decision is part of one flow; use available space dynamically with worlds, selected-world context, avatar choices, and entry actions visible together.
 
+Small setup labels and authentication greetings should use inked manga-caption language, such as clipped strips or notched stamps. Avoid plain geometric ellipse badges when a label is decorative rather than interactive.
+
 Each world owns its own cast of avatars. Switching worlds from chat should immediately restore the last avatar selected for that world; changing that remembered identity happens through the setup screen, not by carrying an avatar between worlds.
 
 World-owned avatars should stay visibly identifiable after selection: use portrait art, individual accent color, and a concise signature motif in setup and chat presence surfaces while keeping names and message text readable.
