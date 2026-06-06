@@ -1,9 +1,6 @@
-import postgres from "postgres";
 import type { ChatMessage } from "../chat-data";
 import { createSeedStore } from "./seed";
 import type { KokoroeStoreAdapter, KokoroeUser, StoreState } from "./types";
-
-type SupabaseSql = ReturnType<typeof postgres>;
 
 type MetaRow = {
   counter: number;
@@ -11,13 +8,13 @@ type MetaRow = {
 };
 
 type UserRow = {
-  created_at: Date | string;
+  created_at: string;
   display_name: string;
   email: string | null;
   id: string;
   password_hash: string | null;
   password_salt: string | null;
-  updated_at: Date | string;
+  updated_at: string;
   username: string | null;
 };
 
@@ -33,17 +30,17 @@ type AvatarSelectionRow = {
 };
 
 type SessionRow = {
-  created_at: Date | string;
-  expires_at: Date | string;
+  created_at: string;
+  expires_at: string;
   id: string;
-  last_seen_at: Date | string;
+  last_seen_at: string;
   user_id: string;
 };
 
 type MessageRow = {
   author: string;
   avatar_id: string | null;
-  created_at: Date | string | null;
+  created_at: string | null;
   id: string;
   is_mine: boolean;
   room_id: string;
@@ -55,90 +52,121 @@ type MessageRow = {
 
 const stateKey = "kokoroe";
 const globalSupabaseStore = globalThis as typeof globalThis & {
-  __kokoroeSupabaseSql?: SupabaseSql;
   __kokoroeSupabaseState?: StoreState;
 };
 
-function getDatabaseUrl() {
-  return process.env.SUPABASE_DIRECT_URL ?? process.env.DATABASE_URL;
-}
+function getSupabaseConfig() {
+  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-function getSql() {
-  const databaseUrl = getDatabaseUrl();
-
-  if (!databaseUrl) {
-    throw new Error("KOKOROE_STORE=supabase requires SUPABASE_DIRECT_URL or DATABASE_URL.");
+  if (!url || !serviceRoleKey) {
+    throw new Error("KOKOROE_STORE=supabase requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
   }
 
-  globalSupabaseStore.__kokoroeSupabaseSql ??= postgres(databaseUrl, {
-    idle_timeout: 20,
-    max: 3,
-    prepare: false,
-    ssl: "require",
+  return {
+    restUrl: `${url.replace(/\/$/, "")}/rest/v1`,
+    serviceRoleKey,
+  };
+}
+
+function getHeaders() {
+  const { serviceRoleKey } = getSupabaseConfig();
+
+  return {
+    apikey: serviceRoleKey,
+    authorization: `Bearer ${serviceRoleKey}`,
+    "content-type": "application/json",
+  };
+}
+
+async function requestSupabase<T>(path: string, init: RequestInit = {}) {
+  const { restUrl } = getSupabaseConfig();
+  const response = await fetch(`${restUrl}/${path}`, {
+    ...init,
+    headers: {
+      ...getHeaders(),
+      ...init.headers,
+    },
   });
 
-  return globalSupabaseStore.__kokoroeSupabaseSql;
-}
-
-function toIsoString(value: Date | string | null) {
-  if (!value) {
-    return undefined;
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`Supabase request failed (${response.status}): ${message}`);
   }
 
-  return value instanceof Date ? value.toISOString() : value;
+  const text = await response.text();
+
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
 }
 
 function toNullable(value: string | undefined) {
   return value ?? null;
 }
 
-function toDateOrNull(value: string | undefined) {
-  return value ? new Date(value) : null;
+function toTimestamp(value: string | undefined) {
+  return value ?? null;
 }
 
-async function ensureSeedState(sql: SupabaseSql) {
+async function selectRows<T>(path: string) {
+  return requestSupabase<T[]>(path);
+}
+
+async function deleteRows(table: string, filter: string) {
+  await requestSupabase(`${table}?${filter}`, {
+    method: "DELETE",
+    headers: { prefer: "return=minimal" },
+  });
+}
+
+async function insertRows<T extends Record<string, unknown>>(table: string, rows: T[]) {
+  if (rows.length === 0) {
+    return;
+  }
+
+  await requestSupabase(table, {
+    method: "POST",
+    body: JSON.stringify(rows),
+    headers: { prefer: "return=minimal" },
+  });
+}
+
+async function upsertRows<T extends Record<string, unknown>>(table: string, rows: T[]) {
+  if (rows.length === 0) {
+    return;
+  }
+
+  await requestSupabase(table, {
+    method: "POST",
+    body: JSON.stringify(rows),
+    headers: { prefer: "resolution=merge-duplicates,return=minimal" },
+  });
+}
+
+async function ensureSeedState() {
   const seedStore = createSeedStore();
-  await writeSupabaseState(sql, seedStore);
+  await writeSupabaseState(seedStore);
   return seedStore;
 }
 
-async function readSupabaseState(sql: SupabaseSql): Promise<StoreState> {
-  const metaRows = await sql<MetaRow[]>`
-    SELECT version, counter
-    FROM store_meta
-    WHERE key = ${stateKey}
-  `;
+async function readSupabaseState(): Promise<StoreState> {
+  const [metaRows, users, profiles, avatarSelections, sessions, messages] = await Promise.all([
+    selectRows<MetaRow>(`store_meta?select=version,counter&key=eq.${stateKey}`),
+    selectRows<UserRow>("users?select=*&order=created_at.asc,id.asc"),
+    selectRows<ProfileRow>("user_profiles?select=*"),
+    selectRows<AvatarSelectionRow>("user_avatar_selections?select=*"),
+    selectRows<SessionRow>("sessions?select=*&order=created_at.asc,id.asc"),
+    selectRows<MessageRow>("messages?select=*&order=created_at.asc.nullsfirst,id.asc"),
+  ]);
   const meta = metaRows[0];
 
   if (!meta) {
-    return ensureSeedState(sql);
+    return ensureSeedState();
   }
 
-  const [users, profiles, avatarSelections, sessions, messages] = await Promise.all([
-    sql<UserRow[]>`
-      SELECT *
-      FROM users
-      ORDER BY created_at ASC, id ASC
-    `,
-    sql<ProfileRow[]>`
-      SELECT *
-      FROM user_profiles
-    `,
-    sql<AvatarSelectionRow[]>`
-      SELECT *
-      FROM user_avatar_selections
-    `,
-    sql<SessionRow[]>`
-      SELECT *
-      FROM sessions
-      ORDER BY created_at ASC, id ASC
-    `,
-    sql<MessageRow[]>`
-      SELECT *
-      FROM messages
-      ORDER BY created_at ASC NULLS FIRST, id ASC
-    `,
-  ]);
   const profilesByUserId = new Map(profiles.map((profile) => [profile.user_id, profile]));
   const avatarSelectionsByUserId = new Map<string, Record<string, string>>();
 
@@ -162,15 +190,15 @@ async function readSupabaseState(sql: SupabaseSql): Promise<StoreState> {
         selectedAvatarIds: avatarSelectionsByUserId.get(user.id) ?? {},
       },
       username: user.username ?? undefined,
-      createdAt: toIsoString(user.created_at) ?? "",
-      updatedAt: toIsoString(user.updated_at) ?? "",
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
     })),
     sessions: sessions.map((session) => ({
       id: session.id,
       userId: session.user_id,
-      createdAt: toIsoString(session.created_at) ?? "",
-      expiresAt: toIsoString(session.expires_at) ?? "",
-      lastSeenAt: toIsoString(session.last_seen_at) ?? "",
+      createdAt: session.created_at,
+      expiresAt: session.expires_at,
+      lastSeenAt: session.last_seen_at,
     })),
     messages: messages.map((message): ChatMessage => ({
       id: message.id,
@@ -181,113 +209,84 @@ async function readSupabaseState(sql: SupabaseSql): Promise<StoreState> {
       text: message.text,
       tone: message.tone,
       time: message.time_label,
-      createdAt: toIsoString(message.created_at),
+      createdAt: message.created_at ?? undefined,
       mine: message.is_mine,
     })),
   };
 }
 
-async function writeSupabaseState(sql: SupabaseSql, store: StoreState) {
-  await sql.begin(async (transaction) => {
-    await transaction`DELETE FROM user_avatar_selections`;
-    await transaction`DELETE FROM user_profiles`;
-    await transaction`DELETE FROM sessions`;
-    await transaction`DELETE FROM messages`;
-    await transaction`DELETE FROM users`;
-    await transaction`DELETE FROM store_meta`;
+async function writeSupabaseState(store: StoreState) {
+  await deleteRows("user_avatar_selections", "user_id=not.is.null");
+  await deleteRows("user_profiles", "user_id=not.is.null");
+  await deleteRows("sessions", "id=not.is.null");
+  await deleteRows("messages", "id=not.is.null");
+  await deleteRows("users", "id=not.is.null");
+  await deleteRows("store_meta", "key=not.is.null");
 
-    await transaction`
-      INSERT INTO store_meta (key, version, counter)
-      VALUES (${stateKey}, ${store.version}, ${store.counter})
-    `;
+  await upsertRows("store_meta", [{
+    key: stateKey,
+    version: store.version,
+    counter: store.counter,
+  }]);
 
-    for (const user of store.users) {
-      await transaction`
-        INSERT INTO users (
-          id,
-          display_name,
-          email,
-          username,
-          password_hash,
-          password_salt,
-          created_at,
-          updated_at
-        ) VALUES (
-          ${user.id},
-          ${user.displayName},
-          ${toNullable(user.email)},
-          ${toNullable(user.username)},
-          ${toNullable(user.passwordHash)},
-          ${toNullable(user.passwordSalt)},
-          ${new Date(user.createdAt)},
-          ${new Date(user.updatedAt)}
-        )
-      `;
-      await transaction`
-        INSERT INTO user_profiles (user_id, current_room_id)
-        VALUES (${user.id}, ${user.profile.currentRoomId})
-      `;
+  await insertRows("users", store.users.map((user) => ({
+    id: user.id,
+    display_name: user.displayName,
+    email: toNullable(user.email),
+    username: toNullable(user.username),
+    password_hash: toNullable(user.passwordHash),
+    password_salt: toNullable(user.passwordSalt),
+    created_at: user.createdAt,
+    updated_at: user.updatedAt,
+  })));
 
-      for (const [roomId, avatarId] of Object.entries(user.profile.selectedAvatarIds)) {
-        await transaction`
-          INSERT INTO user_avatar_selections (user_id, room_id, avatar_id)
-          VALUES (${user.id}, ${roomId}, ${avatarId})
-        `;
-      }
-    }
+  await insertRows("user_profiles", store.users.map((user) => ({
+    user_id: user.id,
+    current_room_id: user.profile.currentRoomId,
+  })));
 
-    for (const session of store.sessions) {
-      await transaction`
-        INSERT INTO sessions (id, user_id, created_at, expires_at, last_seen_at)
-        VALUES (
-          ${session.id},
-          ${session.userId},
-          ${new Date(session.createdAt)},
-          ${new Date(session.expiresAt)},
-          ${new Date(session.lastSeenAt)}
-        )
-      `;
-    }
+  await insertRows(
+    "user_avatar_selections",
+    store.users.flatMap((user) => (
+      Object.entries(user.profile.selectedAvatarIds).map(([roomId, avatarId]) => ({
+        user_id: user.id,
+        room_id: roomId,
+        avatar_id: avatarId,
+      }))
+    )),
+  );
 
-    for (const message of store.messages) {
-      await transaction`
-        INSERT INTO messages (
-          id,
-          room_id,
-          avatar_id,
-          user_id,
-          author,
-          text,
-          tone,
-          time_label,
-          created_at,
-          is_mine
-        ) VALUES (
-          ${message.id},
-          ${message.roomId},
-          ${toNullable(message.avatarId)},
-          ${toNullable(message.userId)},
-          ${message.author},
-          ${message.text},
-          ${message.tone},
-          ${message.time},
-          ${toDateOrNull(message.createdAt)},
-          ${message.mine ?? false}
-        )
-      `;
-    }
-  });
+  await insertRows("sessions", store.sessions.map((session) => ({
+    id: session.id,
+    user_id: session.userId,
+    created_at: session.createdAt,
+    expires_at: session.expiresAt,
+    last_seen_at: session.lastSeenAt,
+  })));
+
+  await insertRows("messages", store.messages.map((message) => ({
+    id: message.id,
+    room_id: message.roomId,
+    avatar_id: toNullable(message.avatarId),
+    user_id: toNullable(message.userId),
+    author: message.author,
+    text: message.text,
+    tone: message.tone,
+    time_label: message.time,
+    created_at: toTimestamp(message.createdAt),
+    is_mine: message.mine ?? false,
+  })));
 }
 
 export function createSupabaseStoreAdapter(): KokoroeStoreAdapter {
   return {
     async getState() {
-      globalSupabaseStore.__kokoroeSupabaseState ??= await readSupabaseState(getSql());
+      globalSupabaseStore.__kokoroeSupabaseState ??= await readSupabaseState();
       return globalSupabaseStore.__kokoroeSupabaseState;
     },
     async saveState(store) {
       globalSupabaseStore.__kokoroeSupabaseState = store;
-      await writeSupabaseState(getSql(), store);
+      await writeSupabaseState(store);
     },
   };
 }

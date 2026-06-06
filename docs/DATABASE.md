@@ -13,7 +13,7 @@ Use `.data/kokoroe-dev-store.json` as the default local development adapter.
 - The adapter boundary lives under `app/stores/`. Domain logic should call a store adapter, not file-system APIs directly.
 
 Set `KOKOROE_STORE=sqlite` to use the SQLite adapter at `.data/kokoroe-dev.sqlite`.
-Set `KOKOROE_STORE=supabase` with `SUPABASE_DIRECT_URL` or `DATABASE_URL` to use hosted Supabase Postgres. Prefer Supabase's transaction pooler connection string as `DATABASE_URL` for Vercel/serverless deployments.
+Set `KOKOROE_STORE=supabase` with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to use hosted Supabase Postgres through server-only API routes. Keep the service role key out of frontend code. `SUPABASE_DIRECT_URL` or `DATABASE_URL` are still useful for migration scripts; prefer Supabase's transaction pooler connection string as `DATABASE_URL` for Vercel/serverless deployments when using direct Postgres connections.
 
 ## Store Adapter Contract
 
@@ -31,7 +31,9 @@ Move from full-state adapter methods to table-specific repository methods before
 SQLite is the right next step because Kokoroe is still shaping its data model, and local development should remain cheap, inspectable, and easy to reset. The schema should be written so it can later move to Postgres with minimal model changes.
 
 For deployment with realtime, the likely production path is Supabase Postgres: route handlers keep doing validation/writes, and clients subscribe to committed room message changes.
-The first Supabase adapter still honors the broad state-shaped adapter contract so production can move to Postgres without rewriting route contracts. Replace this with table-specific repository methods before serious multi-user traffic.
+The first Supabase adapter still honors the broad state-shaped adapter contract so production can move to Postgres without rewriting route contracts. It uses Supabase's REST API with the server-only service role key because the direct database hostname is not IPv4-compatible from every environment. Replace this with table-specific repository methods before serious multi-user traffic.
+
+The initial Supabase migration has been applied to the hosted project. Supabase currently reports Row Level Security disabled on the Kokoroe tables. Because Kokoroe writes through server routes with a service role key, RLS can be enabled before client-side realtime is introduced, but policies need to be planned deliberately so future anon-key subscriptions only see allowed rows.
 
 ## Initial Tables
 
