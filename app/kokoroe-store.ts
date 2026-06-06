@@ -333,6 +333,18 @@ export async function getMessages(roomId?: string) {
   return { messages: messages.filter((message) => message.roomId === room.id), status: 200 } as const;
 }
 
+export async function getBackendHealth() {
+  const store = await getStore();
+
+  return {
+    checkedAt: new Date().toISOString(),
+    messageCount: store.messages.length,
+    roomCount: rooms.length,
+    status: "ok",
+    store: process.env.KOKOROE_STORE ?? "json",
+  };
+}
+
 export async function createDevSession(input: DevLoginInput) {
   const now = new Date().toISOString();
   const identifier = getCredentialIdentifier(input);

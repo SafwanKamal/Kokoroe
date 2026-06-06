@@ -39,6 +39,8 @@ The initial Supabase migration has been applied to the hosted project. Row Level
 
 Realtime currently exposes `messages` inserts to browser clients with the publishable key. The only public RLS policy is `SELECT` on `messages`; all writes still go through Kokoroe API routes with server-side validation. The client subscribes to message inserts and filters by room id in application code so room ids with punctuation do not depend on realtime filter parsing.
 
+`/api/health` is the lightweight production readiness check. It forces a fresh store read and returns public operational counts only, so deployment checks can confirm the configured adapter is reachable without exposing user/session data.
+
 ## Initial Tables
 
 - `users`: account identity, display name, timestamps
