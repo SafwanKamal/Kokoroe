@@ -48,10 +48,11 @@ type ProfilePatchPayload = {
 };
 
 async function readApiJson<T>(response: Response) {
-  const payload = (await response.json()) as T & ApiErrorPayload;
+  const text = await response.text();
+  const payload = text ? JSON.parse(text) as T & ApiErrorPayload : {} as T & ApiErrorPayload;
 
   if (!response.ok) {
-    throw new Error(payload.error ?? "Kokoroe API request failed.");
+    throw new Error(payload.error ?? `Kokoroe API request failed with status ${response.status}.`);
   }
 
   return payload;
