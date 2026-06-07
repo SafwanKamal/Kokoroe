@@ -41,6 +41,8 @@ Realtime currently exposes `messages` inserts to browser clients with the publis
 
 `/api/health` is the lightweight production readiness check. It forces a fresh store read and returns public operational counts only, so deployment checks can confirm the configured adapter is reachable without exposing user/session data.
 
+Backend contract tests now cover the local adapter path for account creation, duplicate rejection, password login, session restore, world-scoped avatar memory, wrong-room avatar rejection, and message persistence. Keep these tests adapter-independent so JSON/SQLite/Supabase changes do not alter route/domain behavior accidentally.
+
 ## Initial Tables
 
 - `users`: account identity, display name, timestamps
