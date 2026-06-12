@@ -1160,10 +1160,12 @@ button:disabled {
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--room-wash) 58%, var(--field-cream)) 0 58%, color-mix(in srgb, var(--accent) 18%, var(--field-cream)) 58%),
     var(--field-cream);
-  box-shadow: 5px 5px 0 rgba(18, 17, 15, 0.22);
+  box-shadow:
+    2px 2px 0 rgba(18, 17, 15, 0.28),
+    6px 6px 0 color-mix(in srgb, var(--room-wash) 54%, rgba(18, 17, 15, 0.12));
   text-align: left;
   clip-path: polygon(0.5% 0, 100% 3%, 99% 98%, 0 96%);
-  transition: box-shadow 180ms ease, filter 180ms ease;
+  transition: box-shadow 180ms ease, filter 180ms ease, transform 180ms ease;
 }
 
 .wide-scene-card::before {
@@ -1186,7 +1188,10 @@ button:disabled {
 }
 
 .wide-scene-card[data-selected="true"] {
-  box-shadow: 6px 6px 0 var(--accent);
+  box-shadow:
+    3px 3px 0 var(--ink-black),
+    8px 8px 0 color-mix(in srgb, var(--accent) 62%, var(--field-cream)),
+    12px 12px 0 color-mix(in srgb, var(--accent) 18%, transparent);
   filter: saturate(1.08);
 }
 
@@ -1321,7 +1326,10 @@ button:disabled {
 .compact-avatar-panel {
   border: 3px solid var(--panel-border);
   background: color-mix(in srgb, var(--room-wash) 42%, var(--field-cream));
-  box-shadow: 4px 4px 0 rgba(18, 17, 15, 0.18);
+  box-shadow:
+    3px 3px 0 var(--ink-black),
+    7px 7px 0 color-mix(in srgb, var(--room-wash) 58%, var(--field-cream)),
+    11px 11px 0 rgba(18, 17, 15, 0.08);
 }
 
 .setup-world-card {
@@ -1330,6 +1338,10 @@ button:disabled {
   display: grid;
   gap: 0.3rem;
   border-color: var(--accent);
+  box-shadow:
+    3px 3px 0 var(--ink-black),
+    7px 7px 0 color-mix(in srgb, var(--accent) 42%, var(--field-cream)),
+    11px 11px 0 color-mix(in srgb, var(--accent) 14%, transparent);
   overflow: hidden;
 }
 
@@ -1405,7 +1417,10 @@ button:disabled {
   padding: 0.5rem;
   border: 2px solid var(--avatar-accent);
   background: var(--field-cream);
-  box-shadow: 3px 3px 0 color-mix(in srgb, var(--avatar-accent) 65%, var(--ink-black));
+  box-shadow:
+    2px 2px 0 var(--ink-black),
+    5px 5px 0 color-mix(in srgb, var(--avatar-accent) 58%, var(--field-cream)),
+    8px 8px 0 color-mix(in srgb, var(--avatar-accent) 16%, transparent);
   overflow: hidden;
 }
 
@@ -1489,6 +1504,9 @@ button:disabled {
   padding: 0.45rem;
   border: 2px solid var(--panel-border);
   background: var(--field-cream);
+  box-shadow:
+    2px 2px 0 rgba(18, 17, 15, 0.24),
+    4px 4px 0 color-mix(in srgb, var(--paper-warm) 84%, transparent);
   text-align: left;
 }
 
@@ -1550,7 +1568,9 @@ button:disabled {
 .compact-avatar-token[data-selected="true"] {
   border-color: var(--avatar-accent);
   background: color-mix(in srgb, var(--room-wash) 38%, var(--field-cream));
-  box-shadow: 3px 3px 0 var(--avatar-accent);
+  box-shadow:
+    2px 2px 0 var(--ink-black),
+    5px 5px 0 color-mix(in srgb, var(--avatar-accent) 64%, var(--field-cream));
 }
 
 .chat-shell {
