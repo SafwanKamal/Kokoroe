@@ -684,6 +684,15 @@ export default function Home() {
   return (
     <main className="kokoroe-shell">
       <div className="paper-grain" aria-hidden="true" />
+      {appStep === "scene" ? (
+        <img
+          alt=""
+          aria-hidden="true"
+          className="world-outer-backdrop"
+          src={selectedRoom.sceneImage}
+          style={{ objectPosition: selectedRoom.scenePosition }}
+        />
+      ) : null}
       {worldJumpTransition}
       <AnimatePresence mode="wait">
       {isRestoringSession ? null : appStep === "login" ? (
