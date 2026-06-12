@@ -607,8 +607,15 @@ export default function Home() {
             </div>
 
             <form className="chat-composer" key="chat-composer" onSubmit={sendLine}>
+              <div className="composer-status" aria-live="polite">
+                <span aria-hidden="true" />
+                Live in {selectedRoom.name} as {selectedAvatar.name}
+              </div>
               <label>
-                <span>Send a line</span>
+                <span className="composer-label-row">
+                  <span>Send a line</span>
+                  <em>{draft.length}/{MESSAGE_CHARACTER_LIMIT}</em>
+                </span>
                 <textarea
                   onChange={(event) => setDraft(event.target.value)}
                   maxLength={MESSAGE_CHARACTER_LIMIT}
