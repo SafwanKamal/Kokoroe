@@ -151,6 +151,8 @@ Avatar choice is world-scoped. A character/avatar should be selected after choos
 
 World and avatar selection should share one compact setup page on desktop. Avoid separate full-screen panels when the decision is part of one flow; use available space dynamically with worlds, selected-world context, avatar choices, and entry actions visible together.
 
+Setup pages should not leave large blank paper areas when a selected world has scene art. Use the current world's illustration as a low-opacity, masked backdrop behind the setup panel so empty space feels like atmosphere while foreground cards stay readable.
+
 Small setup labels and authentication greetings should use inked manga-caption language, such as clipped strips or notched stamps. Avoid plain geometric ellipse badges when a label is decorative rather than interactive.
 
 Each world owns its own cast of avatars. Switching worlds from chat should immediately restore the last avatar selected for that world; changing that remembered identity happens through the setup screen, not by carrying an avatar between worlds.
@@ -181,6 +183,8 @@ The app must remain:
 Desktop panels should feel vertically balanced in the viewport. Major windows, widgets, and page sections should not appear pinned too high or stretched downward unless the content truly needs scrolling.
 
 Motion should make screen changes feel like moving through manga panels, not generic app fades. Use `motion/react` for screen transitions, selectable-card feedback, message entry movement, and layout changes. CSS animations may carry ambient paper grain, subtle scene breathing, speed-line movement, selected-state energy, and typing indicators. Always respect reduced-motion preferences.
+
+Major page transitions may include a brief manga portal/jump burst, such as a character silhouette diving into the selected world. Keep it short and decorative so it adds life without delaying navigation.
 
 ## Design Review Rule
 

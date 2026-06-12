@@ -593,6 +593,7 @@ h2 {
 .login-page,
 .avatar-page,
 .scene-select-page {
+  position: relative;
   width: min(1100px, 100%);
   min-height: calc(100vh - clamp(2rem, 5vw, 4rem));
   margin: 0 auto;
@@ -600,6 +601,135 @@ h2 {
     linear-gradient(145deg, rgba(249, 244, 232, 0.96), rgba(246, 238, 220, 0.92)),
     var(--paper-base);
   clip-path: polygon(1% 0, 99.4% 1%, 100% 98.4%, 0.6% 100%);
+}
+
+.world-jump-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 58%, rgba(249, 244, 232, 0.82), rgba(246, 238, 220, 0.4) 34%, rgba(18, 17, 15, 0.3) 68%),
+    var(--paper-base);
+}
+
+.world-jump-transition img {
+  position: absolute;
+  inset: -7%;
+  width: 114%;
+  height: 114%;
+  object-fit: cover;
+  opacity: 0.3;
+  filter: saturate(0.9) contrast(1.08);
+  transform: scale(1.08);
+  animation: world-wash-zoom 920ms ease-out both;
+}
+
+.world-jump-transition::before {
+  content: "";
+  position: absolute;
+  inset: -22%;
+  background:
+    repeating-conic-gradient(
+      from -12deg at 50% 55%,
+      rgba(18, 17, 15, 0.34) 0deg 1.4deg,
+      transparent 1.4deg 7deg
+    );
+  opacity: 0.32;
+  animation: portal-lines 920ms steps(5, end) both;
+}
+
+.world-jump-transition::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 58%, transparent 0 8rem, rgba(249, 244, 232, 0.36) 8.2rem 11rem, transparent 11.4rem),
+    radial-gradient(circle at 50% 58%, rgba(255, 255, 255, 0.84), transparent 9rem);
+  mix-blend-mode: screen;
+  animation: portal-flash 920ms ease-out both;
+}
+
+.jump-portal {
+  position: absolute;
+  left: 50%;
+  top: 57%;
+  width: min(34rem, 68vw);
+  aspect-ratio: 1;
+  border: 0.35rem solid var(--panel-border);
+  border-radius: 48% 52% 45% 56%;
+  background:
+    radial-gradient(circle, rgba(249, 244, 232, 0.72), rgba(191, 217, 232, 0.44) 42%, rgba(18, 17, 15, 0.16) 72%, transparent 74%);
+  box-shadow:
+    0 0 0 0.7rem rgba(249, 244, 232, 0.34),
+    0 0 0 1.1rem rgba(18, 17, 15, 0.14);
+  transform: translate(-50%, -50%) rotate(-7deg);
+  animation: portal-open 920ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.jump-figure {
+  position: absolute;
+  left: 50%;
+  top: 64%;
+  width: 4.4rem;
+  height: 6rem;
+  transform-origin: center bottom;
+  animation: jumper-arc 920ms cubic-bezier(0.2, 0.82, 0.24, 1) both;
+}
+
+.jump-figure::before {
+  content: "";
+  position: absolute;
+  left: 1.25rem;
+  top: 0;
+  width: 1.9rem;
+  aspect-ratio: 1;
+  border: 0.22rem solid var(--panel-border);
+  border-radius: 50%;
+  background: var(--field-cream);
+}
+
+.jump-figure::after {
+  content: "";
+  position: absolute;
+  left: 0.88rem;
+  top: 1.72rem;
+  width: 2.65rem;
+  height: 2.95rem;
+  border: 0.25rem solid var(--panel-border);
+  background: var(--primary-blue);
+  clip-path: polygon(18% 0, 88% 6%, 100% 72%, 68% 100%, 4% 78%);
+}
+
+.jump-figure i {
+  position: absolute;
+  left: 0.1rem;
+  top: 2rem;
+  width: 4.2rem;
+  height: 3.9rem;
+  border-top: 0.26rem solid var(--panel-border);
+  border-left: 0.26rem solid transparent;
+  border-right: 0.26rem solid transparent;
+  transform: rotate(-18deg);
+}
+
+.world-jump-transition b {
+  position: absolute;
+  left: 50%;
+  top: 17%;
+  color: var(--field-cream);
+  font-family: var(--font-action-stack);
+  font-size: clamp(2.3rem, 9vw, 7rem);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  text-shadow:
+    0.08em 0.08em 0 var(--panel-border),
+    -0.03em 0.03em 0 var(--panel-border),
+    0.12em 0.14em 0 color-mix(in srgb, var(--accent, var(--primary-blue)) 62%, var(--panel-border));
+  transform: translateX(-50%) rotate(-4deg);
+  animation: jump-sfx 920ms ease-out both;
 }
 
 .login-page {
@@ -1056,6 +1186,34 @@ button:disabled {
 .scene-select-page {
   width: min(1120px, 100%);
   align-content: start;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(249, 244, 232, 0.9), rgba(246, 238, 220, 0.82)),
+    var(--paper-base);
+}
+
+.scene-select-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.17;
+  filter: saturate(0.9) contrast(1.08);
+  pointer-events: none;
+  transform: scale(1.04);
+  -webkit-mask-image:
+    radial-gradient(circle at 78% 34%, #000 0 18rem, transparent 31rem),
+    linear-gradient(90deg, transparent 0%, #000 22%, #000 100%);
+  mask-image:
+    radial-gradient(circle at 78% 34%, #000 0 18rem, transparent 31rem),
+    linear-gradient(90deg, transparent 0%, #000 22%, #000 100%);
+}
+
+.scene-select-page > :not(.scene-select-backdrop) {
+  position: relative;
+  z-index: 1;
 }
 
 .scene-select-header {
@@ -2305,6 +2463,92 @@ button:disabled {
   100% {
     background-position: 1.6rem 0;
     transform: translateX(0);
+  }
+}
+
+@keyframes world-wash-zoom {
+  0% {
+    opacity: 0;
+    transform: scale(1.22) rotate(-1deg);
+  }
+  18% {
+    opacity: 0.32;
+  }
+  100% {
+    opacity: 0.2;
+    transform: scale(1.02) rotate(0);
+  }
+}
+
+@keyframes portal-lines {
+  0% {
+    opacity: 0;
+    transform: scale(0.72) rotate(0deg);
+  }
+  30% {
+    opacity: 0.36;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.26) rotate(8deg);
+  }
+}
+
+@keyframes portal-flash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  42% {
+    opacity: 1;
+  }
+}
+
+@keyframes portal-open {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.28) rotate(-18deg);
+  }
+  36% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.04) rotate(-7deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.42) rotate(7deg);
+  }
+}
+
+@keyframes jumper-arc {
+  0% {
+    opacity: 0;
+    transform: translate(-13rem, 4rem) rotate(-18deg) scale(0.74);
+  }
+  20% {
+    opacity: 1;
+  }
+  54% {
+    opacity: 1;
+    transform: translate(-50%, -8rem) rotate(14deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(7rem, -2rem) rotate(34deg) scale(0.46);
+  }
+}
+
+@keyframes jump-sfx {
+  0% {
+    opacity: 0;
+    transform: translate(-54%, 0.8rem) scale(0.72) rotate(-8deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.04) rotate(-4deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-46%, -1.2rem) scale(1.18) rotate(2deg);
   }
 }
 

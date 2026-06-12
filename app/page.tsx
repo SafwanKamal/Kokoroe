@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   avatarsByRoom,
   initialAvatarSelections,
@@ -95,6 +95,7 @@ function appendMessageIfNew(currentMessages: ChatMessage[], message: ChatMessage
 }
 
 export default function Home() {
+  const shouldReduceMotion = useReducedMotion();
   const [appStep, setAppStep] = useState<AppStep>("login");
   const [selectedRoomId, setSelectedRoomId] = useState(rooms[0].id);
   const [selectedAvatarIds, setSelectedAvatarIds] = useState<Record<string, string>>(initialAvatarSelections);
@@ -111,7 +112,9 @@ export default function Home() {
   const [isRestoringSession, setIsRestoringSession] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [revealedProfileMessageId, setRevealedProfileMessageId] = useState<string | null>(null);
+  const [transitionBurst, setTransitionBurst] = useState<{ id: number; to: AppStep } | null>(null);
   const messageScrollRef = useRef<HTMLDivElement>(null);
+  const previousStepRef = useRef<AppStep>(appStep);
 
   const selectedRoom = useMemo(
     () => rooms.find((room) => room.id === selectedRoomId) ?? rooms[0],
@@ -276,6 +279,27 @@ export default function Home() {
   }, [appStep]);
 
   useEffect(() => {
+    if (isRestoringSession || shouldReduceMotion) {
+      previousStepRef.current = appStep;
+      return;
+    }
+
+    if (previousStepRef.current === appStep) {
+      return;
+    }
+
+    previousStepRef.current = appStep;
+    const burst = { id: Date.now(), to: appStep };
+    setTransitionBurst(burst);
+
+    const timer = window.setTimeout(() => {
+      setTransitionBurst((currentBurst) => (currentBurst?.id === burst.id ? null : currentBurst));
+    }, 980);
+
+    return () => window.clearTimeout(timer);
+  }, [appStep, isRestoringSession, shouldReduceMotion]);
+
+  useEffect(() => {
     let isCurrent = true;
 
     fetchCurrentSession()
@@ -401,10 +425,35 @@ export default function Home() {
     return () => window.clearInterval(artTimer);
   }, [appStep]);
 
+  const worldJumpTransition = (
+    <AnimatePresence>
+      {transitionBurst ? (
+        <motion.div
+          aria-hidden="true"
+          className="world-jump-transition"
+          data-step={transitionBurst.to}
+          exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 1, 0] }}
+          key={transitionBurst.id}
+          transition={{ duration: 0.92, times: [0, 0.12, 0.78, 1], ease: "easeOut" }}
+        >
+          <img alt="" src={selectedRoom.sceneImage} style={{ objectPosition: selectedRoom.scenePosition }} />
+          <span className="jump-portal" />
+          <span className="jump-figure">
+            <i />
+          </span>
+          <b>Whoosh</b>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+
   if (appStep === "chat") {
     return (
       <main className="kokoroe-shell chat-shell">
         <div className="paper-grain" aria-hidden="true" />
+        {worldJumpTransition}
         <motion.section
           {...screenMotion}
           className="chat-stage"
@@ -635,6 +684,7 @@ export default function Home() {
   return (
     <main className="kokoroe-shell">
       <div className="paper-grain" aria-hidden="true" />
+      {worldJumpTransition}
       <AnimatePresence mode="wait">
       {isRestoringSession ? null : appStep === "login" ? (
         <motion.section
@@ -733,6 +783,13 @@ export default function Home() {
               } as React.CSSProperties
           }
         >
+          <img
+            alt=""
+            aria-hidden="true"
+            className="scene-select-backdrop"
+            src={selectedRoom.sceneImage}
+            style={{ objectPosition: selectedRoom.scenePosition }}
+          />
           <div className="scene-select-header" key="scene-header">
             <div>
               <span className="panel-kicker">Scene Setup</span>
