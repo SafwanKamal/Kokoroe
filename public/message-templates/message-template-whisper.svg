@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 365 190" preserveAspectRatio="none" role="img" aria-label="Kokoroe whisper message template">
+<svg shape-rendering="geometricPrecision" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 365 190" preserveAspectRatio="none" role="img" aria-label="Kokoroe whisper message template">
   <path
     d="M43 24C73 10 119 9 180 11C242 9 295 11 318 25C334 37 340 61 338 96C337 123 329 141 312 150C286 162 244 166 182 164L114 161C96 172 74 180 51 184C61 175 68 166 72 157C45 152 29 140 25 122C20 98 22 65 29 46C32 37 37 29 43 24Z"
     fill="#f9f7ef"

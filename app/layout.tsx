@@ -70,7 +70,7 @@ export default function RootLayout({
 
   return (
     <html className={fontClasses} lang="en">
-      <body>{children}</body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

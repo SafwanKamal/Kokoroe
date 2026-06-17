@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, type TargetAndTransition, type Transition, useReducedMotion } from "motion/react";
 import {
   avatarsByRoom,
   initialAvatarSelections,
@@ -25,11 +25,38 @@ import {
   MESSAGE_CHARACTER_LIMIT,
   messagePresentations,
   resolvePresentationId,
+  type MessagePresentationId,
 } from "./message-presentations";
 import { subscribeToRoomMessages } from "./realtime";
 
 type AppStep = "login" | "scene" | "chat";
 type AuthMode = "login" | "create";
+
+const transitionFrameIndexes = [1, 2, 3, 4, 5, 6];
+const composerPetals = [
+  { id: "petal-1", x: "8%", drift: "1.2rem", rise: "-1.8rem", size: "0.34rem", rotate: "-18deg", delay: "0ms", duration: "1700ms" },
+  { id: "petal-2", x: "17%", drift: "-0.8rem", rise: "-2.4rem", size: "0.42rem", rotate: "24deg", delay: "160ms", duration: "1900ms" },
+  { id: "petal-3", x: "31%", drift: "1.8rem", rise: "-2.1rem", size: "0.3rem", rotate: "52deg", delay: "320ms", duration: "1800ms" },
+  { id: "petal-4", x: "46%", drift: "-1.4rem", rise: "-2.7rem", size: "0.46rem", rotate: "-38deg", delay: "480ms", duration: "2050ms" },
+  { id: "petal-5", x: "58%", drift: "1rem", rise: "-2rem", size: "0.32rem", rotate: "14deg", delay: "640ms", duration: "1750ms" },
+  { id: "petal-6", x: "70%", drift: "-1.9rem", rise: "-2.6rem", size: "0.4rem", rotate: "68deg", delay: "800ms", duration: "1950ms" },
+  { id: "petal-7", x: "83%", drift: "1.4rem", rise: "-2.3rem", size: "0.36rem", rotate: "-54deg", delay: "960ms", duration: "1850ms" },
+  { id: "petal-8", x: "93%", drift: "-1.1rem", rise: "-1.9rem", size: "0.28rem", rotate: "34deg", delay: "1120ms", duration: "1650ms" },
+];
+const sadRainDrops = [
+  { id: "rain-1", x: "7%", y: "4%", length: "2.5rem", delay: "-120ms", duration: "980ms", opacity: "0.42" },
+  { id: "rain-2", x: "14%", y: "18%", length: "3.2rem", delay: "-620ms", duration: "1180ms", opacity: "0.34" },
+  { id: "rain-3", x: "23%", y: "-2%", length: "2.2rem", delay: "-340ms", duration: "920ms", opacity: "0.5" },
+  { id: "rain-4", x: "34%", y: "8%", length: "3.7rem", delay: "-860ms", duration: "1240ms", opacity: "0.3" },
+  { id: "rain-5", x: "66%", y: "-4%", length: "2.7rem", delay: "-180ms", duration: "1020ms", opacity: "0.42" },
+  { id: "rain-6", x: "75%", y: "10%", length: "3.5rem", delay: "-760ms", duration: "1120ms", opacity: "0.36" },
+  { id: "rain-7", x: "84%", y: "0%", length: "2.35rem", delay: "-460ms", duration: "900ms", opacity: "0.52" },
+  { id: "rain-8", x: "93%", y: "18%", length: "3rem", delay: "-1040ms", duration: "1160ms", opacity: "0.32" },
+  { id: "rain-9", x: "3%", y: "48%", length: "2.9rem", delay: "-520ms", duration: "1040ms", opacity: "0.28" },
+  { id: "rain-10", x: "90%", y: "50%", length: "2.6rem", delay: "-260ms", duration: "960ms", opacity: "0.38" },
+  { id: "rain-11", x: "17%", y: "62%", length: "2.2rem", delay: "-940ms", duration: "1080ms", opacity: "0.27" },
+  { id: "rain-12", x: "79%", y: "68%", length: "2.4rem", delay: "-700ms", duration: "1010ms", opacity: "0.31" },
+];
 
 const screenMotion = {
   initial: { opacity: 0, y: 22, scale: 0.985, rotate: -0.35 },
@@ -41,6 +68,28 @@ const screenMotion = {
 const cardTap = { scale: 0.975, rotate: -0.4 };
 const cardHover = { y: -3, rotate: 0.15 };
 const timestampGapMinutes = 5;
+
+type MessageEntryMotion = {
+  initial: TargetAndTransition;
+  animate: TargetAndTransition;
+  transition: Transition;
+};
+
+function getMessageEntryMotion(shouldReduceMotion: boolean): MessageEntryMotion {
+  if (shouldReduceMotion) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      transition: { duration: 0.18, ease: "easeOut" },
+    };
+  }
+
+  return {
+    initial: { opacity: 0, y: 8 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.22, ease: "easeOut" },
+  };
+}
 
 function getTimeMinutes(time: string) {
   const match = time.trim().match(/^(\d{1,2}):(\d{2})(?:\s*([AP]M))?$/i);
@@ -294,7 +343,7 @@ export default function Home() {
 
     const timer = window.setTimeout(() => {
       setTransitionBurst((currentBurst) => (currentBurst?.id === burst.id ? null : currentBurst));
-    }, 980);
+    }, 1750);
 
     return () => window.clearTimeout(timer);
   }, [appStep, isRestoringSession, shouldReduceMotion]);
@@ -433,17 +482,16 @@ export default function Home() {
           className="world-jump-transition"
           data-step={transitionBurst.to}
           exit={{ opacity: 0 }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 1, 1, 0] }}
+          initial={{ opacity: 1 }}
+          animate={{ opacity: [1, 1, 1, 0] }}
           key={transitionBurst.id}
-          transition={{ duration: 0.92, times: [0, 0.12, 0.78, 1], ease: "easeOut" }}
+          transition={{ duration: 1.58, times: [0, 0.76, 0.9, 1], ease: "easeOut" }}
         >
-          <img alt="" src={selectedRoom.sceneImage} style={{ objectPosition: selectedRoom.scenePosition }} />
-          <span className="jump-portal" />
-          <span className="jump-figure">
-            <i />
+          <span className="isekai-scene-sequence">
+            {transitionFrameIndexes.map((frameIndex) => (
+              <span className="isekai-scene-frame" key={frameIndex} />
+            ))}
           </span>
-          <b>Whoosh</b>
         </motion.div>
       ) : null}
     </AnimatePresence>
@@ -555,6 +603,7 @@ export default function Home() {
                   const messageAvatar = getMessageAvatar(message);
                   const presentationId = resolvePresentationId(message.text, message.tone);
                   const presentation = messagePresentations[presentationId];
+                  const messageEntryMotion = getMessageEntryMotion(!!shouldReduceMotion);
                   const messageNodes = [];
 
                   if (shouldShowTimestamp(message, roomMessages[index - 1])) {
@@ -576,12 +625,13 @@ export default function Home() {
                     <motion.article
                       className="message-row"
                       data-mine={message.mine ? "true" : "false"}
+                      data-presentation={presentationId}
                       key={message.id}
                       layout
-                      initial={{ opacity: 0, y: 18, rotate: message.mine ? 1.2 : -1.2, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
+                      initial={messageEntryMotion.initial}
+                      animate={messageEntryMotion.animate}
                       exit={{ opacity: 0, y: -10, scale: 0.96 }}
-                      transition={{ duration: 0.28, ease: "easeOut" }}
+                      transition={messageEntryMotion.transition}
                     >
                       <div
                         key="message-bubble"
@@ -600,6 +650,25 @@ export default function Home() {
                           data-motion={presentation.motion}
                           data-presentation={presentationId}
                         >
+                          {presentationId === "sad" && (
+                            <span aria-hidden="true" className="sad-rain-rig">
+                              {sadRainDrops.map((drop) => (
+                                <i
+                                  key={drop.id}
+                                  style={
+                                    {
+                                      "--rain-delay": drop.delay,
+                                      "--rain-duration": drop.duration,
+                                      "--rain-length": drop.length,
+                                      "--rain-opacity": drop.opacity,
+                                      "--rain-x": drop.x,
+                                      "--rain-y": drop.y,
+                                    } as React.CSSProperties
+                                  }
+                                />
+                              ))}
+                            </span>
+                          )}
                           <img
                             alt=""
                             aria-hidden="true"
@@ -672,6 +741,24 @@ export default function Home() {
                   rows={3}
                   value={draft}
                 />
+                <span className="composer-sakura-trail" aria-hidden="true">
+                  {composerPetals.map((petal) => (
+                    <i
+                      key={petal.id}
+                      style={
+                        {
+                          "--petal-delay": petal.delay,
+                          "--petal-drift": petal.drift,
+                          "--petal-duration": petal.duration,
+                          "--petal-rise": petal.rise,
+                          "--petal-rotate": petal.rotate,
+                          "--petal-size": petal.size,
+                          "--petal-x": petal.x,
+                        } as React.CSSProperties
+                      }
+                    />
+                  ))}
+                </span>
               </label>
               <button disabled={isSending} type="submit">{isSending ? "Sending" : "Send"}</button>
             </form>
@@ -731,7 +818,11 @@ export default function Home() {
                 <input
                   value={displayName}
                   onChange={(event) => setDisplayName(event.target.value)}
+                  autoCapitalize="none"
+                  autoComplete={authMode === "create" ? "username" : "username"}
+                  autoCorrect="off"
                   placeholder="Username or Email"
+                  spellCheck={false}
                 />
               </label>
               <label>
@@ -740,6 +831,7 @@ export default function Home() {
                   type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
+                  autoComplete={authMode === "create" ? "new-password" : "current-password"}
                   placeholder={authMode === "create" ? "Password (8+ characters)" : "Password"}
                 />
               </label>

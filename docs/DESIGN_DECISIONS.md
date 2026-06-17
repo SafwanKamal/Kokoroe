@@ -155,6 +155,12 @@ Setup pages should not leave large blank paper areas when a selected world has s
 
 Small setup labels and authentication greetings should use inked manga-caption language, such as clipped strips or notched stamps. Avoid plain geometric ellipse badges when a label is decorative rather than interactive.
 
+Major page transitions should use coherent generated manga animation assets when possible, not placeholder CSS shapes or smooth generic pans. The current production transition is a six-scene first-person isekai sequence, stored as individual high-resolution wide frames in `public/transitions/wide-isekai/` and animated as stepped manga scene cuts with slight panel punch.
+
+Input focus effects should avoid generic blue browser rings, cheap dot fields, and slash-like marks. If a particle effect is used, it should be a small intentional motif such as shaped sakura petals, animated with restrained transform/opacity movement and removed if it competes with typing.
+
+Message bubbles should stay visually still until a non-generic, manga-specific motion language is designed and approved. Do not add placeholder pop, bounce, wiggle, ghost-fade, or generic spawn animations to settled transcript bubbles just because the catalog has a `motion` value. If a bubble needs motion, prefer shell-specific environmental details that belong to the artwork, such as rain lines animated around the sad bubble, while keeping the bubble frame and text safe area stable.
+
 Each world owns its own cast of avatars. Switching worlds from chat should immediately restore the last avatar selected for that world; changing that remembered identity happens through the setup screen, not by carrying an avatar between worlds.
 
 World-owned avatars should stay visibly identifiable after selection: use portrait art, individual accent color, and a concise signature motif in setup and chat presence surfaces while keeping names and message text readable.

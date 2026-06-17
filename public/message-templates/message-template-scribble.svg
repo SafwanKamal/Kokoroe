@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 210" preserveAspectRatio="none" role="img" aria-label="Kokoroe scribble message template">
+<svg shape-rendering="geometricPrecision" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 210" preserveAspectRatio="none" role="img" aria-label="Kokoroe scribble message template">
   <defs>
     <clipPath id="scribbleClip">
       <path d="M46 48C62 28 94 23 122 26C139 16 167 19 182 25C207 19 239 29 251 48C266 58 267 84 259 98C270 117 259 141 244 148C228 166 194 168 174 164C154 175 120 170 104 163C87 169 62 159 55 148L32 166L40 139C25 125 23 99 32 85C25 67 34 54 46 48Z" />
