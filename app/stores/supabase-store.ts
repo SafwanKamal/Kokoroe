@@ -58,6 +58,7 @@ type RoomMembershipRow = {
 };
 
 const stateKey = "kokoroe";
+const membershipMessagePrefix = "__kokoroe_room_membership__";
 const globalSupabaseStore = globalThis as typeof globalThis & {
   __kokoroeSupabaseState?: StoreState;
 };
@@ -110,6 +111,12 @@ async function requestSupabase<T>(path: string, init: RequestInit = {}) {
   return JSON.parse(text) as T;
 }
 
+function isMissingRoomMembershipsTable(error: unknown) {
+  return error instanceof Error &&
+    error.message.includes("room_memberships") &&
+    (error.message.includes("PGRST205") || error.message.includes("Could not find the table"));
+}
+
 function toNullable(value: string | undefined) {
   return value ?? null;
 }
@@ -122,11 +129,36 @@ async function selectRows<T>(path: string) {
   return requestSupabase<T[]>(path);
 }
 
+async function selectRoomMembershipRows() {
+  try {
+    return await selectRows<RoomMembershipRow>("room_memberships?select=*&order=created_at.asc,room_id.asc,user_id.asc");
+  } catch (error) {
+    if (isMissingRoomMembershipsTable(error)) {
+      return undefined;
+    }
+
+    throw error;
+  }
+}
+
 async function deleteRows(table: string, filter: string) {
   await requestSupabase(`${table}?${filter}`, {
     method: "DELETE",
     headers: { prefer: "return=minimal" },
   });
+}
+
+async function deleteRoomMembershipRows() {
+  try {
+    await deleteRows("room_memberships", "room_id=not.is.null");
+    return true;
+  } catch (error) {
+    if (isMissingRoomMembershipsTable(error)) {
+      return false;
+    }
+
+    throw error;
+  }
 }
 
 async function insertRows<T extends Record<string, unknown>>(table: string, rows: T[]) {
@@ -233,6 +265,54 @@ function toRoomMembershipRow(membership: RoomMembership) {
   };
 }
 
+function getMembershipMessageId(membership: RoomMembership) {
+  return `${membershipMessagePrefix}:${membership.roomId}:${membership.userId}`;
+}
+
+function isMembershipMessage(message: MessageRow) {
+  return message.id.startsWith(`${membershipMessagePrefix}:`) && message.text === membershipMessagePrefix;
+}
+
+function toRoomMembershipMessageRow(membership: RoomMembership) {
+  return {
+    id: getMembershipMessageId(membership),
+    room_id: membership.roomId,
+    avatar_id: null,
+    user_id: membership.userId,
+    author: membership.addedByUserId ?? "kokoroe",
+    text: membershipMessagePrefix,
+    tone: "plain",
+    time_label: "",
+    created_at: membership.createdAt,
+    is_mine: false,
+  };
+}
+
+function getRoomMembershipsFromMessages(messages: MessageRow[]) {
+  return messages
+    .filter(isMembershipMessage)
+    .map((message): RoomMembership => ({
+      addedByUserId: message.author === "kokoroe" ? undefined : message.author,
+      createdAt: message.created_at ?? new Date(0).toISOString(),
+      roomId: message.room_id,
+      userId: message.user_id ?? "",
+    }))
+    .filter((membership) => membership.userId);
+}
+
+async function saveRoomMembershipRows(store: StoreState) {
+  try {
+    await upsertRows("room_memberships", store.roomMemberships.map(toRoomMembershipRow), "room_id,user_id");
+    return;
+  } catch (error) {
+    if (!isMissingRoomMembershipsTable(error)) {
+      throw error;
+    }
+  }
+
+  await upsertRows("messages", store.roomMemberships.map(toRoomMembershipMessageRow), "id");
+}
+
 async function saveProfileRows(user: KokoroeUser) {
   await upsertRows("users", [toUserRow(user)]);
   await upsertRows("user_profiles", [toProfileRow(user)]);
@@ -253,7 +333,7 @@ async function readSupabaseState(): Promise<StoreState> {
     selectRows<AvatarSelectionRow>("user_avatar_selections?select=*"),
     selectRows<SessionRow>("sessions?select=*&order=created_at.asc,id.asc"),
     selectRows<MessageRow>("messages?select=*&order=created_at.asc.nullsfirst,id.asc"),
-    selectRows<RoomMembershipRow>("room_memberships?select=*&order=created_at.asc,room_id.asc,user_id.asc"),
+    selectRoomMembershipRows(),
   ]);
   const meta = metaRows[0];
 
@@ -274,12 +354,12 @@ async function readSupabaseState(): Promise<StoreState> {
     version: meta.version as StoreState["version"],
     counter: meta.counter,
     roomMembers: {},
-    roomMemberships: roomMemberships.map((membership): RoomMembership => ({
+    roomMemberships: roomMemberships ? roomMemberships.map((membership): RoomMembership => ({
       addedByUserId: membership.added_by_user_id ?? undefined,
       createdAt: membership.created_at,
       roomId: membership.room_id,
       userId: membership.user_id,
-    })),
+    })) : getRoomMembershipsFromMessages(messages),
     users: users.map((user): KokoroeUser => ({
       id: user.id,
       displayName: user.display_name,
@@ -301,7 +381,7 @@ async function readSupabaseState(): Promise<StoreState> {
       expiresAt: session.expires_at,
       lastSeenAt: session.last_seen_at,
     })),
-    messages: messages.map((message): ChatMessage => ({
+    messages: messages.filter((message) => !isMembershipMessage(message)).map((message): ChatMessage => ({
       id: message.id,
       roomId: message.room_id,
       avatarId: message.avatar_id ?? undefined,
@@ -321,7 +401,7 @@ async function writeSupabaseState(store: StoreState) {
   await deleteRows("user_profiles", "user_id=not.is.null");
   await deleteRows("sessions", "id=not.is.null");
   await deleteRows("messages", "id=not.is.null");
-  await deleteRows("room_memberships", "room_id=not.is.null");
+  const hasRoomMembershipsTable = await deleteRoomMembershipRows();
   await deleteRows("users", "id=not.is.null");
   await deleteRows("store_meta", "key=not.is.null");
 
@@ -338,9 +418,16 @@ async function writeSupabaseState(store: StoreState) {
 
   await insertRows("sessions", store.sessions.map(toSessionRow));
 
-  await insertRows("messages", store.messages.map(toMessageRow));
+  await insertRows(
+    "messages",
+    hasRoomMembershipsTable
+      ? store.messages.map(toMessageRow)
+      : [...store.messages.map(toMessageRow), ...store.roomMemberships.map(toRoomMembershipMessageRow)],
+  );
 
-  await insertRows("room_memberships", store.roomMemberships.map(toRoomMembershipRow));
+  if (hasRoomMembershipsTable) {
+    await insertRows("room_memberships", store.roomMemberships.map(toRoomMembershipRow));
+  }
 }
 
 export function createSupabaseStoreAdapter(): KokoroeStoreAdapter {
@@ -360,7 +447,7 @@ export function createSupabaseStoreAdapter(): KokoroeStoreAdapter {
       await insertRows("user_profiles", [toProfileRow(user)]);
       await insertRows("user_avatar_selections", toAvatarSelectionRows(user));
       await insertRows("sessions", [toSessionRow(session)]);
-      await upsertRows("room_memberships", store.roomMemberships.map(toRoomMembershipRow), "room_id,user_id");
+      await saveRoomMembershipRows(store);
     },
     async insertSession(store, user, session) {
       globalSupabaseStore.__kokoroeSupabaseState = store;
