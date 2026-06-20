@@ -50,13 +50,14 @@
     "emotionTags": ["aside", "subdued", "complaint"],
     "classifierHint": "An under-the-breath aside, subdued complaint, or quiet aside.",
     "metrics": {
-      "textWidth": 112,
-      "maxTextWidth": 190,
-      "frameLeft": 48,
-      "frameRight": 54,
+      "textWidth": 132,
+      "maxTextWidth": 280,
+      "frameLeft": 38,
+      "frameRight": 60,
       "frameTop": 43,
       "frameBottom": 51,
-      "fontSize": 0.75
+      "fontSize": 0.75,
+      "mirrorPadding": true
     }
   },
   "exclaim": {
@@ -152,10 +153,10 @@
     "metrics": {
       "textWidth": 136,
       "maxTextWidth": 300,
-      "frameLeft": 84,
-      "frameRight": 84,
-      "frameTop": 53,
-      "frameBottom": 54,
+      "frameLeft": 96,
+      "frameRight": 72,
+      "frameTop": 45,
+      "frameBottom": 62,
       "fontSize": 0.76
     }
   },

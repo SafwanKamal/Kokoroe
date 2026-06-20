@@ -1,8 +1,8 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
-import type { ChatMessage } from "../chat-data";
+import type { Avatar, ChatMessage } from "../chat-data";
 import { createSeedStore } from "./seed";
-import type { KokoroeStoreAdapter, KokoroeUser, StoreState } from "./types";
+import type { KokoroeStoreAdapter, KokoroeUser, RoomMembership, StoreState } from "./types";
 
 type SqliteRunResult = {
   changes: number;
@@ -67,6 +67,27 @@ type MessageRow = {
   time_label: string;
   tone: ChatMessage["tone"];
   user_id: string | null;
+};
+
+type RoomMemberRow = {
+  accent_color: string;
+  description: string;
+  id: string;
+  image_src: string;
+  mark: string;
+  name: string;
+  room_id: string;
+  signature: string;
+  thumbnail_scale: number;
+  thumbnail_x: number;
+  thumbnail_y: number;
+};
+
+type RoomMembershipRow = {
+  added_by_user_id: string | null;
+  created_at: string;
+  room_id: string;
+  user_id: string;
 };
 
 const dataDirectory = path.join(process.cwd(), ".data");
@@ -148,6 +169,30 @@ async function getDatabase() {
       created_at TEXT,
       is_mine INTEGER NOT NULL DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS room_members (
+      id TEXT PRIMARY KEY,
+      room_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      mark TEXT NOT NULL,
+      description TEXT NOT NULL,
+      signature TEXT NOT NULL,
+      accent_color TEXT NOT NULL,
+      image_src TEXT NOT NULL,
+      thumbnail_x REAL NOT NULL,
+      thumbnail_y REAL NOT NULL,
+      thumbnail_scale REAL NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS room_memberships (
+      room_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      added_by_user_id TEXT,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY(room_id, user_id),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(added_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+    );
   `);
 
   try {
@@ -187,6 +232,8 @@ function writeSqliteStateSync(database: SqliteDatabase, store: StoreState) {
     database.prepare("DELETE FROM user_profiles").run();
     database.prepare("DELETE FROM sessions").run();
     database.prepare("DELETE FROM messages").run();
+    database.prepare("DELETE FROM room_members").run();
+    database.prepare("DELETE FROM room_memberships").run();
     database.prepare("DELETE FROM users").run();
     database.prepare("DELETE FROM store_meta").run();
 
@@ -272,6 +319,54 @@ function writeSqliteStateSync(database: SqliteDatabase, store: StoreState) {
       );
     }
 
+    const insertRoomMember = database.prepare(`
+      INSERT INTO room_members (
+        id,
+        room_id,
+        name,
+        mark,
+        description,
+        signature,
+        accent_color,
+        image_src,
+        thumbnail_x,
+        thumbnail_y,
+        thumbnail_scale
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const [roomId, members] of Object.entries(store.roomMembers)) {
+      for (const member of members) {
+        insertRoomMember.run(
+          member.id,
+          roomId,
+          member.name,
+          member.mark,
+          member.description,
+          member.signature,
+          member.accentColor,
+          member.imageSrc,
+          member.thumbnail.x,
+          member.thumbnail.y,
+          member.thumbnail.scale,
+        );
+      }
+    }
+
+    const insertRoomMembership = database.prepare(`
+      INSERT INTO room_memberships (room_id, user_id, added_by_user_id, created_at)
+      VALUES (?, ?, ?, ?)
+    `);
+
+    for (const membership of store.roomMemberships) {
+      insertRoomMembership.run(
+        membership.roomId,
+        membership.userId,
+        toNullable(membership.addedByUserId),
+        membership.createdAt,
+      );
+    }
+
     database.exec("COMMIT");
   } catch (error) {
     database.exec("ROLLBACK");
@@ -296,8 +391,11 @@ function readSqliteStateSync(database: SqliteDatabase) {
   const avatarSelections = database.prepare("SELECT * FROM user_avatar_selections").all() as AvatarSelectionRow[];
   const sessions = database.prepare("SELECT * FROM sessions ORDER BY created_at ASC, id ASC").all() as SessionRow[];
   const messages = database.prepare("SELECT * FROM messages ORDER BY rowid ASC").all() as MessageRow[];
+  const roomMembers = database.prepare("SELECT * FROM room_members ORDER BY rowid ASC").all() as RoomMemberRow[];
+  const roomMemberships = database.prepare("SELECT * FROM room_memberships ORDER BY created_at ASC, rowid ASC").all() as RoomMembershipRow[];
   const profilesByUserId = new Map(profiles.map((profile) => [profile.user_id, profile]));
   const avatarSelectionsByUserId = new Map<string, Record<string, string>>();
+  const roomMembersByRoom: Record<string, Avatar[]> = {};
 
   for (const selection of avatarSelections) {
     const currentSelections = avatarSelectionsByUserId.get(selection.user_id) ?? {};
@@ -305,9 +403,34 @@ function readSqliteStateSync(database: SqliteDatabase) {
     avatarSelectionsByUserId.set(selection.user_id, currentSelections);
   }
 
+  for (const member of roomMembers) {
+    roomMembersByRoom[member.room_id] ??= [];
+    roomMembersByRoom[member.room_id].push({
+      id: member.id,
+      name: member.name,
+      mark: member.mark,
+      description: member.description,
+      signature: member.signature,
+      accentColor: member.accent_color,
+      imageSrc: member.image_src,
+      thumbnail: {
+        x: member.thumbnail_x,
+        y: member.thumbnail_y,
+        scale: member.thumbnail_scale,
+      },
+    });
+  }
+
   return {
     version: meta.version as StoreState["version"],
     counter: meta.counter,
+    roomMembers: roomMembersByRoom,
+    roomMemberships: roomMemberships.map((membership): RoomMembership => ({
+      addedByUserId: membership.added_by_user_id ?? undefined,
+      createdAt: membership.created_at,
+      roomId: membership.room_id,
+      userId: membership.user_id,
+    })),
     users: users.map((user): KokoroeUser => ({
       id: user.id,
       displayName: user.display_name,

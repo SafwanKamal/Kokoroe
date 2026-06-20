@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createMessage, getMessages } from "../../kokoroe-store";
+import { createRoomMember, searchAccounts } from "../../kokoroe-store";
 import { getSessionIdFromRequest, sessionErrorResponse } from "../auth/session-cookie";
 
 export async function GET(request: NextRequest) {
-  const roomId = request.nextUrl.searchParams.get("roomId") ?? undefined;
   const sessionId = request.nextUrl.searchParams.get("sessionId") ?? getSessionIdFromRequest(request);
-  const result = await getMessages(roomId, sessionId);
+  const result = await searchAccounts({
+    query: request.nextUrl.searchParams.get("query"),
+    roomId: request.nextUrl.searchParams.get("roomId"),
+    sessionId,
+  });
 
   if ("error" in result) {
-    return sessionErrorResponse(result.error ?? "Messages failed.", result.status);
+    return sessionErrorResponse(result.error ?? "Member search failed.", result.status);
   }
 
-  return NextResponse.json({ messages: result.messages }, { status: result.status });
+  return NextResponse.json({ accounts: result.accounts }, { status: result.status });
 }
 
 export async function POST(request: NextRequest) {
@@ -27,14 +30,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Request body must be an object." }, { status: 400 });
   }
 
-  const result = await createMessage({
-    ...body,
-    sessionId: "sessionId" in body ? body.sessionId : getSessionIdFromRequest(request),
-  });
+  const result = await createRoomMember(body);
 
   if ("error" in result) {
-    return sessionErrorResponse(result.error ?? "Message failed.", result.status);
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  return NextResponse.json({ message: result.message }, { status: result.status });
+  return NextResponse.json(
+    {
+      account: result.account,
+      membersByRoom: result.membersByRoom,
+    },
+    { status: result.status },
+  );
 }

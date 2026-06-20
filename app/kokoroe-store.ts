@@ -1,7 +1,8 @@
 import { randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import {
-  avatarsByRoom,
+  avatarsByRoom as catalogAvatarsByRoom,
+  type Avatar,
   rooms,
   type ChatMessage,
 } from "./chat-data";
@@ -12,11 +13,13 @@ import {
   type MessagePresentationId,
 } from "./message-presentations";
 import { createJsonStoreAdapter } from "./stores/json-store";
+import { getSeedCastUsers, getSeedRoomMemberships, withSeedMessageAccounts } from "./stores/seed";
 import { createSqliteStoreAdapter } from "./stores/sqlite-store";
 import { createSupabaseStoreAdapter } from "./stores/supabase-store";
 import type {
   KokoroeProfile,
   KokoroePublicUser,
+  RoomMembership,
   KokoroeSession,
   KokoroeUser,
   StoreState,
@@ -49,6 +52,23 @@ type ProfileUpdateInput = {
   sessionId?: unknown;
 };
 
+type RoomMemberCreateInput = {
+  accountIdentifier?: unknown;
+  roomId?: unknown;
+  sessionId?: unknown;
+};
+
+type AccountSearchInput = {
+  query?: unknown;
+  roomId?: unknown;
+  sessionId?: unknown;
+};
+
+type RoomJoinInput = {
+  roomId?: unknown;
+  sessionId?: unknown;
+};
+
 const hashLength = 64;
 const sessionLifetimeMs = 1000 * 60 * 60 * 24 * 30;
 const scrypt = promisify(scryptCallback);
@@ -62,7 +82,7 @@ function createDefaultProfile(): KokoroeProfile {
   return {
     currentRoomId: rooms[0].id,
     selectedAvatarIds: Object.fromEntries(
-      rooms.map((room) => [room.id, avatarsByRoom[room.id]?.[0]?.id ?? ""]),
+      rooms.map((room) => [room.id, catalogAvatarsByRoom[room.id]?.[0]?.id ?? ""]),
     ),
   };
 }
@@ -81,14 +101,6 @@ function findRoom(roomId: unknown) {
   }
 
   return rooms.find((candidateRoom) => candidateRoom.id === roomId);
-}
-
-function findAvatar(roomId: string, avatarId: unknown) {
-  if (typeof avatarId !== "string") {
-    return undefined;
-  }
-
-  return avatarsByRoom[roomId]?.find((candidateAvatar) => candidateAvatar.id === avatarId);
 }
 
 function getLoginName(input: DevLoginInput) {
@@ -171,9 +183,51 @@ async function getStore() {
   const store = await storeAdapter.getState();
   let didMigrate = false;
 
+  if (!(store as Partial<StoreState>).roomMembers) {
+    store.roomMembers = {};
+    didMigrate = true;
+  }
+
+  if (!(store as Partial<StoreState>).roomMemberships) {
+    store.roomMemberships = [];
+    didMigrate = true;
+  }
+
+  const existingUserIds = new Set(store.users.map((user) => user.id));
+
+  for (const seedUser of getSeedCastUsers()) {
+    if (!existingUserIds.has(seedUser.id)) {
+      store.users.push(seedUser);
+      existingUserIds.add(seedUser.id);
+      didMigrate = true;
+    }
+  }
+
+  for (const seedMembership of getSeedRoomMemberships()) {
+    if (!hasRoomMembership(store, seedMembership.roomId, seedMembership.userId)) {
+      store.roomMemberships.push(seedMembership);
+      didMigrate = true;
+    }
+  }
+
+  const seededMessages = withSeedMessageAccounts(store.messages);
+  if (seededMessages.some((message, index) => message.userId !== store.messages[index]?.userId)) {
+    store.messages = seededMessages;
+    didMigrate = true;
+  }
+
   for (const user of store.users) {
     if (!(user as Partial<KokoroeUser>).profile) {
       user.profile = createDefaultProfile();
+      didMigrate = true;
+    }
+
+    if (!hasRoomMembership(store, user.profile.currentRoomId, user.id)) {
+      store.roomMemberships.push({
+        createdAt: user.createdAt,
+        roomId: user.profile.currentRoomId,
+        userId: user.id,
+      });
       didMigrate = true;
     }
   }
@@ -255,6 +309,51 @@ async function persistMessage(
   await saveStore(store);
 }
 
+function getAvatarsForRoom(roomId: string) {
+  return catalogAvatarsByRoom[roomId] ?? [];
+}
+
+function getAvatarsByRoom() {
+  return Object.fromEntries(
+    rooms.map((room) => [room.id, getAvatarsForRoom(room.id)]),
+  ) as Record<string, Avatar[]>;
+}
+
+function getRoomMembershipsByRoom(store: StoreState) {
+  const membersByRoom = Object.fromEntries(rooms.map((room) => [room.id, [] as KokoroePublicUser[]]));
+  const usersById = new Map(store.users.map((user) => [user.id, user]));
+
+  for (const membership of store.roomMemberships) {
+    const user = usersById.get(membership.userId);
+
+    if (user && membersByRoom[membership.roomId]) {
+      membersByRoom[membership.roomId].push(getPublicUser(user));
+    }
+  }
+
+  return membersByRoom;
+}
+
+function getViewerMessages(messages: ChatMessage[], userId: string) {
+  return messages.map((message) => ({
+    ...message,
+    mine: message.userId ? message.userId === userId : message.mine === true,
+  }));
+}
+
+function hasRoomMembership(store: StoreState, roomId: string, userId: string) {
+  return store.roomMemberships.some((membership) => membership.roomId === roomId && membership.userId === userId);
+}
+
+function addRoomMembership(store: StoreState, membership: RoomMembership) {
+  if (hasRoomMembership(store, membership.roomId, membership.userId)) {
+    return false;
+  }
+
+  store.roomMemberships.push(membership);
+  return true;
+}
+
 function findUserByCredential(store: StoreState, identifier: string) {
   const normalizedIdentifier = identifier.toLowerCase();
 
@@ -263,6 +362,26 @@ function findUserByCredential(store: StoreState, identifier: string) {
     user.email?.toLowerCase() === normalizedIdentifier ||
     user.displayName.toLowerCase() === normalizedIdentifier
   ));
+}
+
+function getUserSearchScore(user: KokoroeUser, normalizedQuery: string) {
+  const searchableFields = [user.username, user.email, user.displayName]
+    .filter((field): field is string => Boolean(field))
+    .map((field) => field.toLowerCase());
+
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  for (const field of searchableFields) {
+    if (field === normalizedQuery) {
+      bestScore = Math.min(bestScore, 0);
+    } else if (field.startsWith(normalizedQuery)) {
+      bestScore = Math.min(bestScore, 1);
+    } else if (field.includes(normalizedQuery)) {
+      bestScore = Math.min(bestScore, 2);
+    }
+  }
+
+  return bestScore;
 }
 
 function createSession(userId: string): KokoroeSession {
@@ -305,10 +424,13 @@ async function getSessionUser(sessionId: unknown) {
   return { store, session, user, status: 200 } as const;
 }
 
-export function getRoomsPayload() {
+export async function getRoomsPayload() {
+  const store = await getStore();
+
   return {
+    membersByRoom: getRoomMembershipsByRoom(store),
     rooms,
-    avatarsByRoom,
+    avatarsByRoom: getAvatarsByRoom(),
   };
 }
 
@@ -317,11 +439,30 @@ export function getPublicUser(user: KokoroeUser): KokoroePublicUser {
   return publicUser;
 }
 
-export async function getMessages(roomId?: string) {
-  const messages = (await getStore()).messages;
+export async function getMessages(roomId?: string, sessionId?: unknown) {
+  const sessionResult = await getSessionUser(sessionId);
+
+  if (sessionResult.status !== 200) {
+    return sessionResult;
+  }
+
+  const { store, user } = sessionResult;
+  const messages = store.messages;
 
   if (!roomId) {
-    return { messages, status: 200 } as const;
+    const accessibleRoomIds = new Set(
+      store.roomMemberships
+        .filter((membership) => membership.userId === user.id)
+        .map((membership) => membership.roomId),
+    );
+
+    return {
+      messages: getViewerMessages(
+        messages.filter((message) => accessibleRoomIds.has(message.roomId)),
+        user.id,
+      ),
+      status: 200,
+    } as const;
   }
 
   const room = findRoom(roomId);
@@ -330,7 +471,17 @@ export async function getMessages(roomId?: string) {
     return { error: `Unknown room "${roomId}".`, status: 404 } as const;
   }
 
-  return { messages: messages.filter((message) => message.roomId === room.id), status: 200 } as const;
+  if (!hasRoomMembership(store, room.id, user.id)) {
+    return { error: `Join ${room.name} before reading it.`, status: 403 } as const;
+  }
+
+  return {
+    messages: getViewerMessages(
+      messages.filter((message) => message.roomId === room.id),
+      user.id,
+    ),
+    status: 200,
+  } as const;
 }
 
 export async function getBackendHealth() {
@@ -343,6 +494,138 @@ export async function getBackendHealth() {
     status: "ok",
     store: process.env.KOKOROE_STORE ?? "json",
   };
+}
+
+export async function createRoomMember(input: RoomMemberCreateInput) {
+  const sessionResult = await getSessionUser(input.sessionId);
+
+  if (sessionResult.status !== 200) {
+    return sessionResult;
+  }
+
+  if (typeof input.roomId !== "string") {
+    return { error: "roomId is required.", status: 400 } as const;
+  }
+
+  const room = findRoom(input.roomId);
+
+  if (!room) {
+    return { error: `Unknown room "${input.roomId}".`, status: 404 } as const;
+  }
+
+  const accountIdentifier = typeof input.accountIdentifier === "string" ? input.accountIdentifier.trim() : "";
+
+  if (!accountIdentifier) {
+    return { error: "Account name or email is required.", status: 400 } as const;
+  }
+
+  const { store, user, session } = sessionResult;
+  const targetUser = findUserByCredential(store, accountIdentifier) ??
+    store.users.find((candidateUser) => candidateUser.displayName.toLowerCase() === accountIdentifier.toLowerCase());
+
+  if (!targetUser) {
+    return { error: `No account found for "${accountIdentifier}". Ask them to create an account first.`, status: 404 } as const;
+  }
+
+  if (hasRoomMembership(store, room.id, targetUser.id)) {
+    return { error: `${targetUser.displayName} is already in ${room.name}.`, status: 409 } as const;
+  }
+
+  const now = new Date().toISOString();
+
+  addRoomMembership(store, {
+    addedByUserId: user.id,
+    createdAt: now,
+    roomId: room.id,
+    userId: targetUser.id,
+  });
+  user.updatedAt = now;
+  session.lastSeenAt = now;
+  await saveStore(store);
+
+  return {
+    account: getPublicUser(targetUser),
+    membersByRoom: getRoomMembershipsByRoom(store),
+    status: 201,
+  } as const;
+}
+
+export async function searchAccounts(input: AccountSearchInput) {
+  const sessionResult = await getSessionUser(input.sessionId);
+
+  if (sessionResult.status !== 200) {
+    return sessionResult;
+  }
+
+  if (typeof input.roomId !== "string") {
+    return { error: "roomId is required.", status: 400 } as const;
+  }
+
+  const room = findRoom(input.roomId);
+
+  if (!room) {
+    return { error: `Unknown room "${input.roomId}".`, status: 404 } as const;
+  }
+
+  const query = typeof input.query === "string" ? input.query.trim().toLowerCase() : "";
+
+  if (query.length < 2) {
+    return { accounts: [], status: 200 } as const;
+  }
+
+  const { store } = sessionResult;
+  const existingMemberIds = new Set(
+    store.roomMemberships
+      .filter((membership) => membership.roomId === room.id)
+      .map((membership) => membership.userId),
+  );
+
+  const accounts = store.users
+    .map((user) => ({ score: getUserSearchScore(user, query), user }))
+    .filter(({ score, user }) => Number.isFinite(score) && !existingMemberIds.has(user.id))
+    .sort((left, right) => left.score - right.score || left.user.displayName.localeCompare(right.user.displayName))
+    .slice(0, 6)
+    .map(({ user }) => getPublicUser(user));
+
+  return { accounts, status: 200 } as const;
+}
+
+export async function joinRoom(input: RoomJoinInput) {
+  const sessionResult = await getSessionUser(input.sessionId);
+
+  if (sessionResult.status !== 200) {
+    return sessionResult;
+  }
+
+  if (typeof input.roomId !== "string") {
+    return { error: "roomId is required.", status: 400 } as const;
+  }
+
+  const room = findRoom(input.roomId);
+
+  if (!room) {
+    return { error: `Unknown room "${input.roomId}".`, status: 404 } as const;
+  }
+
+  const { session, store, user } = sessionResult;
+  const now = new Date().toISOString();
+
+  addRoomMembership(store, {
+    createdAt: now,
+    roomId: room.id,
+    userId: user.id,
+  });
+
+  user.profile.currentRoomId = room.id;
+  user.updatedAt = now;
+  session.lastSeenAt = now;
+  await saveStore(store);
+
+  return {
+    membersByRoom: getRoomMembershipsByRoom(store),
+    profile: user.profile,
+    status: 200,
+  } as const;
 }
 
 export async function createDevSession(input: DevLoginInput) {
@@ -421,6 +704,11 @@ export async function createAccount(input: DevLoginInput) {
 
   store.users.push(user);
   store.sessions.push(session);
+  addRoomMembership(store, {
+    createdAt: now,
+    roomId: user.profile.currentRoomId,
+    userId: user.id,
+  });
   await persistNewAccount(store, user, session);
 
   return { user, session, status: 201 } as const;
@@ -480,6 +768,10 @@ export async function updateProfile(input: ProfileUpdateInput) {
       return { error: `Unknown room "${input.currentRoomId}".`, status: 404 } as const;
     }
 
+    if (!hasRoomMembership(store, room.id, user.id)) {
+      return { error: `Join ${room.name} before entering it.`, status: 403 } as const;
+    }
+
     nextProfile.currentRoomId = room.id;
   }
 
@@ -495,7 +787,9 @@ export async function updateProfile(input: ProfileUpdateInput) {
         return { error: `Unknown room "${roomId}".`, status: 404 } as const;
       }
 
-      const avatar = findAvatar(room.id, avatarId);
+      const avatar = getAvatarsForRoom(room.id).find(
+        (candidateAvatar) => candidateAvatar.id === avatarId,
+      );
 
       if (!avatar) {
         return { error: `Unknown avatar "${avatarId}" for room "${room.id}".`, status: 404 } as const;
@@ -530,8 +824,16 @@ export async function createMessage(input: MessageCreateInput) {
     return { error: `Unknown room "${input.roomId}".`, status: 404 } as const;
   }
 
+  const { store, user } = sessionResult;
+
+  if (!hasRoomMembership(store, room.id, user.id)) {
+    return { error: `Join ${room.name} before sending there.`, status: 403 } as const;
+  }
+
   const selectedAvatarId = typeof input.avatarId === "string" ? input.avatarId : sessionResult.user.profile.selectedAvatarIds[room.id];
-  const avatar = findAvatar(room.id, selectedAvatarId);
+  const avatar = getAvatarsForRoom(room.id).find(
+    (candidateAvatar) => candidateAvatar.id === selectedAvatarId,
+  );
 
   if (!selectedAvatarId) {
     return { error: `No avatar is selected for room "${room.id}".`, status: 400 } as const;
@@ -552,7 +854,6 @@ export async function createMessage(input: MessageCreateInput) {
   }
 
   const requestedTone = isPresentationId(input.tone) ? input.tone : "plain";
-  const { store, user } = sessionResult;
   const now = new Date();
 
   user.profile.currentRoomId = room.id;
@@ -571,11 +872,10 @@ export async function createMessage(input: MessageCreateInput) {
     tone: resolvePresentationId(text, requestedTone),
     time: formatMessageTime(now),
     createdAt: now.toISOString(),
-    mine: true,
   };
 
   store.messages.push(message);
   await persistMessage(store, user, sessionResult.session, message);
 
-  return { message, status: 201 } as const;
+  return { message: { ...message, mine: true }, status: 201 } as const;
 }

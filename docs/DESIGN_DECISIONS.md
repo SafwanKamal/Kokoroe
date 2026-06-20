@@ -45,6 +45,8 @@ Message-template SVGs should expand with the responsive bubble box. Keep the tex
 
 In the transcript, portraits sit beneath and beside their bubble tails so speech visually originates from the character. Incoming tails point toward the left portrait; a user's outgoing bubble shell is mirrored toward a right-side portrait. Do not show persistent tone badges or speaker-name labels beside every bubble. Clicking a portrait may reveal the character identity on demand.
 
+Portrait reveals should distinguish account identity from avatar identity. Multiple accounts may choose the same world avatar, so the reveal should show the account display name or handle plus the selected avatar/signature; a current user's own message should make the account side explicit with a concise "You" label.
+
 Timestamps should behave like centered transcript dividers rather than per-message metadata. Show the first visible time and then only repeat it when the next message is separated by a meaningful gap; nearby messages should read as one conversational run.
 
 On desktop, the chat window should use most of the available viewport instead of sitting as a small centered panel with large paper margins. Keep mobile and tablet compact, but let the desktop shell grow broadly and vertically while avoiding page overflow.
@@ -157,7 +159,7 @@ Small setup labels and authentication greetings should use inked manga-caption l
 
 Major page transitions should use coherent generated manga animation assets when possible, not placeholder CSS shapes or smooth generic pans. The current production transition is a six-scene first-person isekai sequence, stored as individual high-resolution wide frames in `public/transitions/wide-isekai/` and animated as stepped manga scene cuts with slight panel punch.
 
-Input focus effects should avoid generic blue browser rings, cheap dot fields, and slash-like marks. If a particle effect is used, it should be a small intentional motif such as shaped sakura petals, animated with restrained transform/opacity movement and removed if it competes with typing.
+Input focus effects should avoid generic blue browser rings, cheap dot fields, and slash-like marks. If a particle effect is used, it should be a small intentional motif animated with restrained transform/opacity movement and removed if it competes with typing. Sakura petals are a Crimson Plotroom chat-window atmosphere layer, not a default chatbox or composer-focus effect.
 
 Message bubbles should stay visually still until a non-generic, manga-specific motion language is designed and approved. Do not add placeholder pop, bounce, wiggle, ghost-fade, or generic spawn animations to settled transcript bubbles just because the catalog has a `motion` value. If a bubble needs motion, prefer shell-specific environmental details that belong to the artwork, such as rain lines animated around the sad bubble, while keeping the bubble frame and text safe area stable.
 
@@ -166,6 +168,12 @@ Each world owns its own cast of avatars. Switching worlds from chat should immed
 World-owned avatars should stay visibly identifiable after selection: use portrait art, individual accent color, and a concise signature motif in setup and chat presence surfaces while keeping names and message text readable.
 
 Avatars should appear as illustrated, themed identities rather than initial-only tokens. Use their portrait and personal accent in setup selection and chat presence so changing character is visible in the experience.
+
+Chatroom members are accounts, not avatars. Adding someone in the chat window adds an existing account to that room; it must not create a sendable avatar or let the current user send as that account. Avatar selection and future avatar creation belong in the world/setup window.
+
+The Room Cast add-member flow should recommend existing accounts by username, email, or display name as the user types. Recommendations may show public account identity plus that account's selected avatar for the current world, but adding still creates an account membership rather than an avatar.
+
+Room access is membership-based. A logged-in account may only read, enter, switch to, or send in rooms where it has a room membership. The post-login world screen should list joined rooms only. Public rooms may be discovered through room search and joined from there; private rooms must not appear in public search. Joining a room creates membership for the logged-in account; adding a member creates membership for another account.
 
 Multi-character profile sheets and preview/contact-sheet images are reference material only. Never expose them as selectable avatars or runtime identity portraits.
 

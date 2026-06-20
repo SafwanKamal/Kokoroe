@@ -90,10 +90,15 @@ describe("kokoroe store contract", () => {
   it("persists world-scoped avatar memory on profile updates", async () => {
     const store = await loadStoreModule();
     const account = await createTestAccount(store, "profile");
-    const roomsPayload = store.getRoomsPayload();
+    const roomsPayload = await store.getRoomsPayload();
     const room = roomsPayload.rooms.find((candidateRoom) => candidateRoom.id === "quiet-alley");
 
     expect(room).toBeDefined();
+    await store.joinRoom({
+      roomId: "quiet-alley",
+      sessionId: account.session.id,
+    });
+
     const avatar = roomsPayload.avatarsByRoom["quiet-alley"][1] ?? roomsPayload.avatarsByRoom["quiet-alley"][0];
     const updated = await store.updateProfile({
       currentRoomId: "quiet-alley",
@@ -132,8 +137,14 @@ describe("kokoroe store contract", () => {
   it("creates messages with validated room, avatar, text, and presentation", async () => {
     const store = await loadStoreModule();
     const account = await createTestAccount(store, "message");
-    const roomsPayload = store.getRoomsPayload();
+    const roomsPayload = await store.getRoomsPayload();
     const avatar = roomsPayload.avatarsByRoom["ramen-stand"][0];
+
+    await store.joinRoom({
+      roomId: "ramen-stand",
+      sessionId: account.session.id,
+    });
+
     const result = await store.createMessage({
       avatarId: avatar.id,
       roomId: "ramen-stand",
@@ -154,8 +165,173 @@ describe("kokoroe store contract", () => {
     expect(result.message.text).toBe("Extra garlic for the night shift.");
     expect(result.message.mine).toBe(true);
 
-    const roomMessages = await store.getMessages("ramen-stand");
+    const roomMessages = await store.getMessages("ramen-stand", account.session.id);
     expect(roomMessages.status).toBe(200);
     expect("messages" in roomMessages ? roomMessages.messages : []).toContainEqual(result.message);
+  });
+
+  it("requires room membership before reading or sending in a room", async () => {
+    const store = await loadStoreModule();
+    const account = await createTestAccount(store, "room-access");
+    const roomsPayload = await store.getRoomsPayload();
+    const avatar = roomsPayload.avatarsByRoom["ramen-stand"][0];
+
+    const rejectedMessage = await store.createMessage({
+      avatarId: avatar.id,
+      roomId: "ramen-stand",
+      sessionId: account.session.id,
+      text: "Trying to enter without joining.",
+      tone: "plain",
+    });
+    const rejectedRead = await store.getMessages("ramen-stand", account.session.id);
+
+    expect(rejectedMessage.status).toBe(403);
+    expect("error" in rejectedMessage ? rejectedMessage.error : "").toMatch(/join/i);
+    expect(rejectedRead.status).toBe(403);
+
+    const joined = await store.joinRoom({
+      roomId: "ramen-stand",
+      sessionId: account.session.id,
+    });
+
+    expect(joined.status).toBe(200);
+
+    if ("error" in joined) {
+      throw new Error(joined.error);
+    }
+
+    expect(joined.membersByRoom["ramen-stand"].map((member) => member.id)).toContain(account.user.id);
+    expect(joined.profile.currentRoomId).toBe("ramen-stand");
+  });
+
+  it("marks messages as mine only for the viewing account", async () => {
+    const store = await loadStoreModule();
+    const author = await createTestAccount(store, "mine-author");
+    const viewer = await createTestAccount(store, "mine-viewer");
+    const roomsPayload = await store.getRoomsPayload();
+    const avatar = roomsPayload.avatarsByRoom["after-school"][0];
+
+    const sent = await store.createMessage({
+      avatarId: avatar.id,
+      roomId: "after-school",
+      sessionId: author.session.id,
+      text: "Side depends on viewer.",
+      tone: "plain",
+    });
+
+    expect(sent.status).toBe(201);
+
+    if ("error" in sent) {
+      throw new Error(sent.error);
+    }
+
+    const authorRead = await store.getMessages("after-school", author.session.id);
+    const viewerRead = await store.getMessages("after-school", viewer.session.id);
+
+    expect(authorRead.status).toBe(200);
+    expect(viewerRead.status).toBe(200);
+
+    if ("error" in authorRead) {
+      throw new Error(authorRead.error);
+    }
+
+    if ("error" in viewerRead) {
+      throw new Error(viewerRead.error);
+    }
+
+    expect(authorRead.messages.find((message) => message.id === sent.message.id)?.mine).toBe(true);
+    expect(viewerRead.messages.find((message) => message.id === sent.message.id)?.mine).toBe(false);
+  });
+
+  it("regenerates seed messages with cast account ownership", async () => {
+    const store = await loadStoreModule();
+    const viewer = await createTestAccount(store, "legacy-mine");
+    const messages = await store.getMessages("after-school", viewer.session.id);
+
+    expect(messages.status).toBe(200);
+
+    if ("error" in messages) {
+      throw new Error(messages.error);
+    }
+
+    const seedMessage = messages.messages.find((message) => message.id === "m1");
+    expect(seedMessage?.userId).toBe("seed-account-skybell-hina");
+    expect(seedMessage?.mine).toBe(false);
+  });
+
+  it("adds existing accounts as room members without creating sendable avatars", async () => {
+    const store = await loadStoreModule();
+    const account = await createTestAccount(store, "member-adder");
+    const invited = await createTestAccount(store, "member-invited");
+    const added = await store.createRoomMember({
+      accountIdentifier: invited.user.email,
+      roomId: "quiet-alley",
+      sessionId: account.session.id,
+    });
+
+    expect(added.status).toBe(201);
+
+    if ("error" in added) {
+      throw new Error(added.error);
+    }
+
+    expect(added.account.id).toBe(invited.user.id);
+    expect(added.membersByRoom["quiet-alley"].map((member) => member.id)).toContain(invited.user.id);
+
+    await store.joinRoom({
+      roomId: "quiet-alley",
+      sessionId: account.session.id,
+    });
+
+    const message = await store.createMessage({
+      avatarId: invited.user.id,
+      roomId: "quiet-alley",
+      sessionId: account.session.id,
+      text: "Trying to speak as another account.",
+      tone: "plain",
+    });
+
+    expect(message.status).toBe(404);
+    expect("error" in message ? message.error : "").toMatch(/unknown avatar/i);
+  });
+
+  it("recommends matching accounts that are not already room members", async () => {
+    const store = await loadStoreModule();
+    const account = await createTestAccount(store, "search-owner");
+    const invited = await createTestAccount(store, "search-target");
+
+    const searchResult = await store.searchAccounts({
+      query: "target",
+      roomId: "quiet-alley",
+      sessionId: account.session.id,
+    });
+
+    expect(searchResult.status).toBe(200);
+
+    if ("error" in searchResult) {
+      throw new Error(searchResult.error);
+    }
+
+    expect(searchResult.accounts.map((candidate) => candidate.id)).toContain(invited.user.id);
+
+    await store.createRoomMember({
+      accountIdentifier: invited.user.email,
+      roomId: "quiet-alley",
+      sessionId: account.session.id,
+    });
+
+    const afterAddSearch = await store.searchAccounts({
+      query: invited.user.email,
+      roomId: "quiet-alley",
+      sessionId: account.session.id,
+    });
+
+    expect(afterAddSearch.status).toBe(200);
+
+    if ("error" in afterAddSearch) {
+      throw new Error(afterAddSearch.error);
+    }
+
+    expect(afterAddSearch.accounts.map((candidate) => candidate.id)).not.toContain(invited.user.id);
   });
 });

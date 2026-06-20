@@ -1,6 +1,6 @@
 import type { ChatMessage } from "../chat-data";
 import { createSeedStore } from "./seed";
-import type { KokoroeSession, KokoroeStoreAdapter, KokoroeUser, StoreState } from "./types";
+import type { KokoroeSession, KokoroeStoreAdapter, KokoroeUser, RoomMembership, StoreState } from "./types";
 
 type MetaRow = {
   counter: number;
@@ -48,6 +48,13 @@ type MessageRow = {
   time_label: string;
   tone: ChatMessage["tone"];
   user_id: string | null;
+};
+
+type RoomMembershipRow = {
+  added_by_user_id: string | null;
+  created_at: string;
+  room_id: string;
+  user_id: string;
 };
 
 const stateKey = "kokoroe";
@@ -217,6 +224,15 @@ function toMessageRow(message: ChatMessage) {
   };
 }
 
+function toRoomMembershipRow(membership: RoomMembership) {
+  return {
+    room_id: membership.roomId,
+    user_id: membership.userId,
+    added_by_user_id: toNullable(membership.addedByUserId),
+    created_at: membership.createdAt,
+  };
+}
+
 async function saveProfileRows(user: KokoroeUser) {
   await upsertRows("users", [toUserRow(user)]);
   await upsertRows("user_profiles", [toProfileRow(user)]);
@@ -230,13 +246,14 @@ async function ensureSeedState() {
 }
 
 async function readSupabaseState(): Promise<StoreState> {
-  const [metaRows, users, profiles, avatarSelections, sessions, messages] = await Promise.all([
+  const [metaRows, users, profiles, avatarSelections, sessions, messages, roomMemberships] = await Promise.all([
     selectRows<MetaRow>(`store_meta?select=version,counter&key=eq.${stateKey}`),
     selectRows<UserRow>("users?select=*&order=created_at.asc,id.asc"),
     selectRows<ProfileRow>("user_profiles?select=*"),
     selectRows<AvatarSelectionRow>("user_avatar_selections?select=*"),
     selectRows<SessionRow>("sessions?select=*&order=created_at.asc,id.asc"),
     selectRows<MessageRow>("messages?select=*&order=created_at.asc.nullsfirst,id.asc"),
+    selectRows<RoomMembershipRow>("room_memberships?select=*&order=created_at.asc,room_id.asc,user_id.asc"),
   ]);
   const meta = metaRows[0];
 
@@ -256,6 +273,13 @@ async function readSupabaseState(): Promise<StoreState> {
   return {
     version: meta.version as StoreState["version"],
     counter: meta.counter,
+    roomMembers: {},
+    roomMemberships: roomMemberships.map((membership): RoomMembership => ({
+      addedByUserId: membership.added_by_user_id ?? undefined,
+      createdAt: membership.created_at,
+      roomId: membership.room_id,
+      userId: membership.user_id,
+    })),
     users: users.map((user): KokoroeUser => ({
       id: user.id,
       displayName: user.display_name,
@@ -297,6 +321,7 @@ async function writeSupabaseState(store: StoreState) {
   await deleteRows("user_profiles", "user_id=not.is.null");
   await deleteRows("sessions", "id=not.is.null");
   await deleteRows("messages", "id=not.is.null");
+  await deleteRows("room_memberships", "room_id=not.is.null");
   await deleteRows("users", "id=not.is.null");
   await deleteRows("store_meta", "key=not.is.null");
 
@@ -314,6 +339,8 @@ async function writeSupabaseState(store: StoreState) {
   await insertRows("sessions", store.sessions.map(toSessionRow));
 
   await insertRows("messages", store.messages.map(toMessageRow));
+
+  await insertRows("room_memberships", store.roomMemberships.map(toRoomMembershipRow));
 }
 
 export function createSupabaseStoreAdapter(): KokoroeStoreAdapter {
@@ -333,6 +360,7 @@ export function createSupabaseStoreAdapter(): KokoroeStoreAdapter {
       await insertRows("user_profiles", [toProfileRow(user)]);
       await insertRows("user_avatar_selections", toAvatarSelectionRows(user));
       await insertRows("sessions", [toSessionRow(session)]);
+      await upsertRows("room_memberships", store.roomMemberships.map(toRoomMembershipRow), "room_id,user_id");
     },
     async insertSession(store, user, session) {
       globalSupabaseStore.__kokoroeSupabaseState = store;

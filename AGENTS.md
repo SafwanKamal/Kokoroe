@@ -84,6 +84,8 @@ After meaningful changes:
 
 Do not rely only on terminal tests for UI work.
 
+For UI/layout fixes, use screenshot-based visual inspection with computer vision when possible. DOM measurements are helpful, but they are not enough on their own; visually inspect the rendered result for text overflow, awkward spacing, clipping, and manga-shell fit before calling the fix done.
+
 ## Avatar Intake
 
 - Read `docs/AVATAR_PIPELINE.md` before adding or replacing avatar portraits.

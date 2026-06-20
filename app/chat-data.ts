@@ -4,6 +4,7 @@ import type { MessagePresentationId } from "./message-presentations";
 export type Room = {
   id: string;
   name: string;
+  visibility: "public" | "private";
   accentColor: string;
   washColor: string;
   description: string;
@@ -47,6 +48,7 @@ export const rooms: Room[] = [
   {
     id: "after-school",
     name: "Skybell Academy",
+    visibility: "public",
     accentColor: "#176BB3",
     washColor: "#BFD9E8",
     description: "A sunlit campus realm of notes, rivals, rumors, and after-class secrets.",
@@ -60,6 +62,7 @@ export const rooms: Room[] = [
   {
     id: "quiet-alley",
     name: "Mizukage Library",
+    visibility: "public",
     accentColor: "#2F7D3B",
     washColor: "#D8E8D5",
     description: "A rain-soft archive where whispers, study vows, and hidden lore gather.",
@@ -73,6 +76,7 @@ export const rooms: Room[] = [
   {
     id: "ramen-stand",
     name: "Yoru Ramen Yokocho",
+    visibility: "public",
     accentColor: "#C58A16",
     washColor: "#F1C94C",
     description: "A lantern alley of midnight cravings, noodle debates, and tiny miracles.",
@@ -86,6 +90,7 @@ export const rooms: Room[] = [
   {
     id: "battle-rooftop",
     name: "Crimson Plotroom",
+    visibility: "public",
     accentColor: "#C94E3B",
     washColor: "#F0B0A5",
     description: "A red-thread storyboard room of clues, betrayals, and sudden reveals.",

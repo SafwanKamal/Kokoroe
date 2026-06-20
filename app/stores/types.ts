@@ -1,4 +1,4 @@
-import type { ChatMessage } from "../chat-data";
+import type { Avatar, ChatMessage } from "../chat-data";
 
 export type KokoroeProfile = {
   currentRoomId: string;
@@ -27,9 +27,18 @@ export type KokoroeSession = {
   lastSeenAt: string;
 };
 
+export type RoomMembership = {
+  addedByUserId?: string;
+  createdAt: string;
+  roomId: string;
+  userId: string;
+};
+
 export type StoreState = {
   version: 1;
   counter: number;
+  roomMembers: Record<string, Avatar[]>;
+  roomMemberships: RoomMembership[];
   users: KokoroeUser[];
   sessions: KokoroeSession[];
   messages: ChatMessage[];
