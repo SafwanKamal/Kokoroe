@@ -28,6 +28,8 @@ Messages store a `tone` value that is a presentation id. Bubble copy starts from
 
 The composer currently limits new messages to 120 characters. Compact high-energy frames may declare a smaller `maxCharacters`; when selected for longer permitted copy they resolve to `plain`. This keeps the expressive single-panel bubble language readable while ordinary dialogue can use more room.
 
+For presentation debugging, a message whose complete trimmed text is exactly a presentation id forces that presentation. Matching is case-insensitive, so `sad`, `GRANDIOSE`, or ` whisper ` are valid shortcuts; phrases and punctuation such as `I feel sad` or `sad!` continue through normal presentation selection.
+
 When adjusting an entry:
 
 1. Inspect the production SVG shell visually.
@@ -38,6 +40,12 @@ When adjusting an entry:
 For example, `scribble` is a dense ink-filled scratch bubble with light text above the hatching. It remains reserved for short frantic lines so the lettering keeps enough breathing room against the visual noise.
 
 `whisper` owns its separate translucent light-blue shell derived from the plain conversation shape. Do not add visible style labels such as `WHISPER` or `SHOUT` to transcript bubbles; the drawing and typography communicate presentation. Portraits sit beneath the tail and reveal identity only when selected.
+
+Presentation motion should usually animate decorative details around a stable shell and text stage, following the approved `sad` rain pattern. Examples include drifting motes for `whisper`, ink ticks for `mutter`, radial speed flashes for `exclaim`, broadcast rings for `announce`, and gold glitter for `grandiose`. `shout` is a shell-motion exception and uses one strong exponential pop-in. `scribble` is a construction exception: a visible ink nib traces the perimeter and lays down clipped zig-zag fill passes, the animated builder hands off to the completed production SVG, and only then does the text enter. Each non-rain perimeter effect uses an inline SVG overlay with the same native `viewBox` and `preserveAspectRatio="none"` behavior as its shell. Position effects in that SVG coordinate system, mirror the entire effect group with outgoing art, and keep all animated marks outside the text safe area. Do not use an oversized generic rig, fixed `rem` trajectories, or unmirrored percentage anchors. All effect rigs must be decorative, ignore pointer input, and disappear when reduced motion is requested.
+
+Only accepted environmental or construction effects auto-run: `sad` rain may remain active on the newest three messages, and a recent `scribble` may perform its one-shot build on arrival or reload. Other shell-specific rigs stay mounted but visually hidden and CSS-paused until the message row is hovered or keyboard-focused. This keeps the transcript still by default while preserving deliberate inspection and replay. Historical `scribble` messages replay their construction on hover or focus before returning to the completed static SVG.
+
+The quiet/chaotic presentations have distinct approved rhythms: `whisper` uses visible blue rising breath motes plus softly traveling dashed contour segments; `mutter` uses green suppressed ink-tick twitches and three sequential green-and-gold dots followed by stillness; `scribble` uses a roughly 2.75-second pen-built reveal with paper, outline, broad clipped ink passes, finishing scratches, final-SVG handoff, and delayed copy. Light marks over dark shells and pale marks over translucent shells must use normal compositing rather than multiply blending.
 
 Timestamps are transcript dividers, not bubble labels. Render them centered in the chat window and suppress repeats for messages that are only a few minutes apart.
 

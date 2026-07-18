@@ -113,8 +113,14 @@ When AI features are added, consider separating:
 
 Do not build this complexity before the base app is working.
 
+## Planned Implementation Order
+
+The next AI work should begin with message classification, not generation. Build and evaluate a bounded classifier that returns one allow-listed `presentationId`, confidence, and a short reason; invalid or low-confidence results fall back to `plain`. Preserve the original user text and keep classification separate from rewriting.
+
+Art generation follows only after classifier behavior is accepted. Generated portraits, room art, or scene moments must enter an approval pipeline before runtime use, reuse the existing world and avatar contracts, and never publish directly from model output.
+
 ## Current Rule
 
-For now, only design the app so AI features can be added later.
+For now, the approved sequence is message classification first and art generation second.
 
 Do not implement AI masking, AI context classification, or image generation unless explicitly requested.

@@ -53,7 +53,7 @@ On desktop, the chat window should use most of the available viewport instead of
 
 ## Production Message Template Assets
 
-Use the lightweight SVGs in `docs/RerferenceImages/chat-template-svgs-production/` as implementation reference assets, not the heavier cropped reference SVGs.
+Use the lightweight SVGs in `docs/ReferenceImages/chat-template-svgs-production/` as implementation reference assets, not the heavier cropped reference SVGs.
 
 - The production SVGs should be decorative shells or accent layers; render message copy as real HTML/CSS text on top.
 - Keep message text selectable, accessible, and responsive.
@@ -163,6 +163,10 @@ Input focus effects should avoid generic blue browser rings, cheap dot fields, a
 
 Message bubbles should stay visually still until a non-generic, manga-specific motion language is designed and approved. Do not add placeholder pop, bounce, wiggle, ghost-fade, or generic spawn animations to settled transcript bubbles just because the catalog has a `motion` value. If a bubble needs motion, prefer shell-specific environmental details that belong to the artwork, such as rain lines animated around the sad bubble, while keeping the bubble frame and text safe area stable.
 
+The approved bubble-motion language extends that environmental-detail rule across expressive presentations: whisper motes, mutter ink ticks, exclaim speed flashes, announce broadcast rings, grandiose gold glitter, and sad rain may animate around stable shells. Shout is a shell-motion exception and enters with a strong exponential scale-up, brief overshoot, and snap-settle. Scribble is a construction exception: a visible nib draws its outline and broad clipped ink passes, resolves into the completed catalog SVG, and reveals the copy only after the drawing is finished. Non-rain perimeter effects use shell-specific SVG overlays that share the exact template viewBox, mirror with outgoing art, and stay beneath copy. Incoming bubbles share one left anchor and outgoing bubbles share one right anchor; tone must not horizontally indent an otherwise aligned conversation run.
+
+The transcript stays visually still by default. `sad` rain is the accepted environmental exception and may remain active on the newest three sad messages; a recent Scribble may perform its one-shot construction on arrival or reload. Other shell-specific rigs stay mounted but hidden and paused until hover or keyboard focus. Historical Scribble messages replay on hover/focus, and reduced motion always shows the completed SVG and text immediately.
+
 Each world owns its own cast of avatars. Switching worlds from chat should immediately restore the last avatar selected for that world; changing that remembered identity happens through the setup screen, not by carrying an avatar between worlds.
 
 World-owned avatars should stay visibly identifiable after selection: use portrait art, individual accent color, and a concise signature motif in setup and chat presence surfaces while keeping names and message text readable.
@@ -197,6 +201,8 @@ The app must remain:
 Desktop panels should feel vertically balanced in the viewport. Major windows, widgets, and page sections should not appear pinned too high or stretched downward unless the content truly needs scrolling.
 
 Motion should make screen changes feel like moving through manga panels, not generic app fades. Use `motion/react` for screen transitions, selectable-card feedback, message entry movement, and layout changes. CSS animations may carry ambient paper grain, subtle scene breathing, speed-line movement, selected-state energy, and typing indicators. Always respect reduced-motion preferences.
+
+The chat shell should read as a living manga page: keep strong outer and panel boundaries, use ink gutters between navigation and conversation, let room art and restrained world-specific atmosphere animate behind stable content, and create transcript rhythm through spacing and controlled indentation rather than moving settled bubbles. The composer should foreground the selected avatar and use an explicit room-owned action verb (`Send`, `Whisper`, `Serve`, or `Reveal`) while keeping the action location predictable.
 
 Major page transitions may include a brief manga portal/jump burst, such as a character silhouette diving into the selected world. Keep it short and decorative so it adds life without delaying navigation.
 

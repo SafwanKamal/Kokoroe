@@ -18,7 +18,7 @@ When concept art is generated:
 
 ## Selected Direction: Expressive Conversational Evolution
 
-The core chat experience represents how real-world digital messaging transforms from standard mobile chat exchanges into an imaginative, co-created manga adventure. This visual direction is captured in [chat_evolution_art.png](file:///Users/safwankamal/Desktop/Code/Kokoroe/docs/RerferenceImages/Concept/chat_evolution_art.png).
+The core chat experience represents how real-world digital messaging transforms from standard mobile chat exchanges into an imaginative, co-created manga adventure. This visual direction is captured in [chat_evolution_art.png](ReferenceImages/Concept/chat_evolution_art.png).
 
 ### Visual Elements to Keep
 
@@ -75,6 +75,24 @@ Examples:
 - Use CSS borders, paper texture overlays, and reusable panel components before relying on many image assets.
 - Keep form fields conventional enough to be immediately understandable.
 - Treat world panels as data-driven cards with per-world accent color, verb, icon, short description, and illustration slot.
+
+## Selected Direction: Vertical Blended Login Panel
+
+Use [login-panel-blend-concept.png](ReferenceImages/Concept/login-panel-blend-concept.png) as the current auth composition reference. The login page should read as one tall manga panel: scene artwork fills the top, then dissolves into a paper login area through ink wash, halftone, rain streaks, and desk shadow instead of ending with a hard crop or blank white block.
+
+### Visual Elements to Keep
+
+- Top scene panel uses bedroom/rain manga art with strong ink, warm lamp light, and cool window light.
+- Bottom login area remains part of the same illustrated panel, with visible paper grain and manga border details.
+- Form fields, primary sign-in action, and create-account option are real UI controls styled with inked borders and teal accents.
+- The blend between artwork and form should minimize dead whitespace while preserving enough calm space for readable controls.
+
+### Visual Elements to Avoid
+
+- Separate floating login cards that sit on top of the art.
+- A hard horizontal cutoff between image and form.
+- Large plain white or empty paper zones beneath the artwork.
+- Baked form text inside runtime art assets; implementation text should remain real HTML/CSS.
 
 ## Curated Room Scenes
 

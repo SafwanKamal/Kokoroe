@@ -68,6 +68,15 @@ Possible future AI features:
 
 These features should be planned for architecturally, but not implemented until explicitly requested.
 
+## Next AI Sequence
+
+After the current dirty-worktree reconciliation is accepted:
+
+1. Build a message-classification model path that selects one allow-listed presentation id with confidence and a safe `plain` fallback. Keep original text, rewriting, and visual rendering as separate concerns, and define an evaluation set before enabling automatic selection.
+2. Begin art generation only after classifier behavior is accepted. Route generated portraits, room art, and scene moments through explicit review and the existing asset-intake contracts before runtime exposure.
+
+AI message masking and free-form generated styling remain outside this sequence.
+
 ## Non-Goals for Early Versions
 
 Do not prioritize these in the first version unless directly asked:
