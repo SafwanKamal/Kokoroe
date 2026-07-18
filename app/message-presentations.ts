@@ -47,6 +47,7 @@ const standardTextStage = {
 const bubbleLineHeight = 1.35;
 
 const prototypePresentationIds = Object.keys(messagePresentations) as MessagePresentationId[];
+const presentationIdSet = new Set<MessagePresentationId>(prototypePresentationIds);
 
 export function resolvePresentationId(text: string, requestedId: MessagePresentationId) {
   const maxCharacters = Math.min(MESSAGE_CHARACTER_LIMIT, messagePresentations[requestedId].maxCharacters);
@@ -60,6 +61,22 @@ export function getRandomPresentationId(text: string) {
   );
 
   return suitableIds[Math.floor(Math.random() * suitableIds.length)] ?? "plain";
+}
+
+export function getDebugPresentationId(text: string) {
+  const candidate = text.trim().toLowerCase() as MessagePresentationId;
+
+  return presentationIdSet.has(candidate) ? candidate : undefined;
+}
+
+export function shouldAutoRunPresentationEffect(
+  presentationId: MessagePresentationId,
+  messageIndex: number,
+  messageCount: number,
+) {
+  const isRecentMessage = messageIndex >= Math.max(0, messageCount - 3);
+
+  return isRecentMessage && (presentationId === "sad" || presentationId === "scribble");
 }
 
 function clamp(value: number, min: number, max: number) {

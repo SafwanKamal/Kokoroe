@@ -8,6 +8,7 @@
     "start": "next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "check": "npm run test && npm run typecheck && npm run build",
     "avatar:add": "node scripts/add-avatar.mjs",
     "db:migrate:supabase": "node scripts/migrate-supabase.mjs"
   },

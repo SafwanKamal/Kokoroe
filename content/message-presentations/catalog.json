@@ -137,7 +137,8 @@
       "frameRight": 49,
       "frameTop": 43,
       "frameBottom": 43,
-      "fontSize": 0.72
+      "fontSize": 0.72,
+      "mirrorPadding": true
     }
   },
   "sad": {
