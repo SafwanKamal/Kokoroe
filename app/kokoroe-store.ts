@@ -9,9 +9,9 @@ import {
 import {
   MESSAGE_CHARACTER_LIMIT,
   messagePresentations,
-  resolvePresentationId,
   type MessagePresentationId,
 } from "./message-presentations";
+import { selectMessagePresentation } from "./message-classifier-runtime";
 import { createJsonStoreAdapter } from "./stores/json-store";
 import { getSeedCastUsers, getSeedRoomMemberships, withSeedMessageAccounts } from "./stores/seed";
 import { createSqliteStoreAdapter } from "./stores/sqlite-store";
@@ -33,6 +33,7 @@ export type {
 
 type MessageCreateInput = {
   avatarId?: unknown;
+  cloudClassificationConsent?: unknown;
   roomId?: unknown;
   sessionId?: unknown;
   text?: unknown;
@@ -854,6 +855,19 @@ export async function createMessage(input: MessageCreateInput) {
   }
 
   const requestedTone = isPresentationId(input.tone) ? input.tone : "plain";
+  const presentationId = await selectMessagePresentation({
+    cloudClassificationConsent: input.cloudClassificationConsent === true,
+    conversationMessages: store.messages
+      .filter((message) => message.roomId === room.id)
+      .map((message) => ({
+        authorKey: message.userId ?? message.author,
+        text: message.text,
+      })),
+    roomId: room.id,
+    text,
+    targetAuthorKey: user.id,
+    requestedPresentationId: requestedTone,
+  });
   const now = new Date();
 
   user.profile.currentRoomId = room.id;
@@ -869,7 +883,7 @@ export async function createMessage(input: MessageCreateInput) {
     userId: user.id,
     author: avatar.name,
     text,
-    tone: resolvePresentationId(text, requestedTone),
+    tone: presentationId,
     time: formatMessageTime(now),
     createdAt: now.toISOString(),
   };

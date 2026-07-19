@@ -62,10 +62,20 @@ type MemberSearchResponse = {
 
 type MessageCreatePayload = {
   avatarId: string;
+  cloudClassificationConsent: boolean;
   roomId: string;
   sessionId?: string;
   text: string;
   tone: MessagePresentationId;
+};
+
+export type MessageClassifierPolicy = {
+  canaryRoomIds: readonly string[];
+  contextStrategy: "discussion-compaction" | "recent-messages";
+  discussionSourceMessageLimit: number;
+  discussionTailMessageLimit: number;
+  enabled: boolean;
+  recentMessageLimit: number;
 };
 
 type MessageCreateResponse = {
@@ -138,6 +148,11 @@ export async function fetchRoomMessages(roomId: string, sessionId?: string) {
 export async function fetchRooms() {
   const response = await fetch("/api/rooms");
   return readApiJson<RoomsResponse>(response);
+}
+
+export async function fetchMessageClassifierPolicy() {
+  const response = await fetch("/api/classifier-policy");
+  return readApiJson<MessageClassifierPolicy>(response);
 }
 
 export async function fetchProfile(sessionId: string) {

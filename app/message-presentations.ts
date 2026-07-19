@@ -46,8 +46,14 @@ const standardTextStage = {
 };
 const bubbleLineHeight = 1.35;
 
-const prototypePresentationIds = Object.keys(messagePresentations) as MessagePresentationId[];
-const presentationIdSet = new Set<MessagePresentationId>(prototypePresentationIds);
+export const messagePresentationIds = Object.freeze(
+  Object.keys(messagePresentations) as MessagePresentationId[],
+);
+const presentationIdSet = new Set<MessagePresentationId>(messagePresentationIds);
+
+export function isMessagePresentationId(value: unknown): value is MessagePresentationId {
+  return typeof value === "string" && presentationIdSet.has(value as MessagePresentationId);
+}
 
 export function resolvePresentationId(text: string, requestedId: MessagePresentationId) {
   const maxCharacters = Math.min(MESSAGE_CHARACTER_LIMIT, messagePresentations[requestedId].maxCharacters);
@@ -56,7 +62,7 @@ export function resolvePresentationId(text: string, requestedId: MessagePresenta
 }
 
 export function getRandomPresentationId(text: string) {
-  const suitableIds = prototypePresentationIds.filter(
+  const suitableIds = messagePresentationIds.filter(
     (presentationId) => text.length <= messagePresentations[presentationId].maxCharacters,
   );
 

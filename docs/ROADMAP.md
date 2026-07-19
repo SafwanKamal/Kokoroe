@@ -73,6 +73,11 @@ These features should be planned for architecturally, but not implemented until 
 After the current dirty-worktree reconciliation is accepted:
 
 1. Build a message-classification model path that selects one allow-listed presentation id with confidence and a safe `plain` fallback. Keep original text, rewriting, and visual rendering as separate concerns, and define an evaluation set before enabling automatic selection.
+   - Make prompt, few-shot examples, evaluation inputs, and runtime calls conversation-aware. Compare a bounded recent-message window with a separate discussion-segmentation/compaction pass; do not silently classify a target message without context.
+   - Start with a replaceable global hosted model behind an explicit rollout flag.
+   - Gate every cloud canary behind both a server-owned room allow-list and explicit, non-persisted composer consent with a bounded-context disclosure.
+   - After collecting opt-in, reviewed corrections, compare a project-owned shared model against the frozen global baseline.
+   - Treat per-user on-device adaptation as optional later work: prefer a tiny local adapter/calibrator over a full model, preserve a global cold-start fallback, and keep the server-side allow-list validation boundary.
 2. Begin art generation only after classifier behavior is accepted. Route generated portraits, room art, and scene moments through explicit review and the existing asset-intake contracts before runtime exposure.
 
 AI message masking and free-form generated styling remain outside this sequence.

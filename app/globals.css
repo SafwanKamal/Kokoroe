@@ -3841,7 +3841,7 @@ button:disabled {
   font-weight: 900;
 }
 
-.chat-composer label {
+.chat-composer > label {
   position: relative;
   grid-column: 2;
   grid-row: 2;
@@ -3905,6 +3905,48 @@ button:disabled {
   background: var(--avatar-accent);
   box-shadow: 0 0 0 0 color-mix(in srgb, var(--avatar-accent) 30%, transparent);
   animation: live-pulse 1.9s ease-in-out infinite;
+}
+
+.chat-composer > .classifier-consent {
+  grid-column: 2 / -1;
+  grid-row: 3;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.5rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px dashed color-mix(in srgb, var(--avatar-accent) 65%, var(--panel-border));
+  background: color-mix(in srgb, var(--avatar-accent) 7%, var(--field-cream));
+  font-weight: 400;
+}
+
+.classifier-consent input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0.08rem 0 0;
+  accent-color: var(--avatar-accent);
+}
+
+.classifier-consent-copy {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.classifier-consent-copy strong {
+  color: var(--soft-ink);
+  font-family: var(--font-action-stack);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.classifier-consent-copy small {
+  color: color-mix(in srgb, var(--soft-ink) 78%, transparent);
+  font-family: var(--font-dialogue-stack);
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.25;
 }
 
 .chat-composer button {
@@ -4725,7 +4767,7 @@ button:disabled {
     font-size: 0.72rem;
   }
 
-  .chat-composer label {
+  .chat-composer > label {
     grid-column: 2;
     grid-row: 2;
   }
@@ -4733,6 +4775,11 @@ button:disabled {
   .chat-composer button {
     grid-column: 3;
     grid-row: 2;
+  }
+
+  .chat-composer > .classifier-consent {
+    grid-column: 1 / -1;
+    grid-row: 3;
   }
 
   .composer-label-row span {

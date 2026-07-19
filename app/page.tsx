@@ -13,6 +13,7 @@ import {
   createAccountSession,
   createLoginSession,
   fetchCurrentSession,
+  fetchMessageClassifierPolicy,
   fetchProfile,
   fetchRoomMessages,
   fetchRooms,
@@ -22,6 +23,7 @@ import {
   postRoomMember,
   postRoomMessage,
   searchRoomMemberAccounts,
+  type MessageClassifierPolicy,
 } from "./kokoroe-api";
 import {
   getBubbleFrameStyle,
@@ -38,6 +40,15 @@ import type { KokoroePublicUser } from "./kokoroe-store";
 
 type AppStep = "login" | "scene" | "chat";
 type AuthMode = "login" | "create";
+
+const disabledClassifierPolicy: MessageClassifierPolicy = {
+  canaryRoomIds: [],
+  contextStrategy: "recent-messages",
+  discussionSourceMessageLimit: 40,
+  discussionTailMessageLimit: 4,
+  enabled: false,
+  recentMessageLimit: 8,
+};
 
 const transitionFrameIndexes = [1, 2, 3, 4, 5, 6];
 const crimsonPetals = [
@@ -489,6 +500,8 @@ export default function Home() {
   const [memberSearchResults, setMemberSearchResults] = useState<KokoroePublicUser[]>([]);
   const [roomSearchQuery, setRoomSearchQuery] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [classifierPolicy, setClassifierPolicy] = useState<MessageClassifierPolicy>(disabledClassifierPolicy);
+  const [cloudClassificationConsent, setCloudClassificationConsent] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
   const [apiError, setApiError] = useState("");
@@ -558,6 +571,7 @@ export default function Home() {
   }, [joinedRoomIds, roomSearchQuery, rooms]);
 
   const isSelectedRoomJoined = joinedRoomIds.has(selectedRoom.id);
+  const isClassifierCanaryRoom = classifierPolicy.enabled && classifierPolicy.canaryRoomIds.includes(selectedRoom.id);
   const activeLoginArt = loginSceneArts[loginArtIndex];
   const activeScreenMotion = shouldReduceMotion
     ? {
@@ -639,10 +653,14 @@ export default function Home() {
   }
 
   async function refreshRooms() {
-    const roomPayload = await fetchRooms();
+    const [roomPayload, policy] = await Promise.all([
+      fetchRooms(),
+      fetchMessageClassifierPolicy().catch(() => disabledClassifierPolicy),
+    ]);
     setRooms(roomPayload.rooms);
     setAvatarsByRoom(roomPayload.avatarsByRoom);
     setMembersByRoom(roomPayload.membersByRoom);
+    setClassifierPolicy(policy);
   }
 
   async function saveProfile(update: { currentRoomId?: string; selectedAvatarIds?: Record<string, string> }) {
@@ -714,6 +732,8 @@ export default function Home() {
       setMemberSearchResults([]);
       setRoomSearchQuery("");
       setMessages([]);
+      setCloudClassificationConsent(false);
+      setClassifierPolicy(disabledClassifierPolicy);
       setIsMemberFormOpen(false);
       setMemberError("");
       setRevealedProfileMessageId(null);
@@ -739,6 +759,7 @@ export default function Home() {
         sessionId,
         roomId: selectedRoom.id,
         avatarId: selectedAvatar.id,
+        cloudClassificationConsent: isClassifierCanaryRoom && cloudClassificationConsent,
         text,
         tone: getDebugPresentationId(text) ?? getRandomPresentationId(text),
       });
@@ -1558,6 +1579,24 @@ export default function Home() {
                 />
               </label>
               <button disabled={isSending} type="submit">{isSending ? "Sending" : sendVerb}</button>
+              {isClassifierCanaryRoom ? (
+                <label className="classifier-consent">
+                  <input
+                    checked={cloudClassificationConsent}
+                    onChange={(event) => setCloudClassificationConsent(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span className="classifier-consent-copy">
+                    <strong>AI bubble assist</strong>
+                    <small>
+                      {classifierPolicy.contextStrategy === "discussion-compaction"
+                        ? `Each opted-in line, topic summaries derived from up to ${classifierPolicy.discussionSourceMessageLimit} room messages, and the latest ${classifierPolicy.discussionTailMessageLimit} messages are sent to OpenRouter with anonymous speaker labels. `
+                        : `Each opted-in line and up to ${classifierPolicy.recentMessageLimit} recent room messages are sent to OpenRouter with anonymous speaker labels. `}
+                      Kokoroe only selects the bubble style; your words stay unchanged.
+                    </small>
+                  </span>
+                </label>
+              ) : null}
             </form>
           </motion.div>
         </motion.section>

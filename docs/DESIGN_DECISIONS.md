@@ -175,6 +175,8 @@ Avatars should appear as illustrated, themed identities rather than initial-only
 
 Chatroom members are accounts, not avatars. Adding someone in the chat window adds an existing account to that room; it must not create a sendable avatar or let the current user send as that account. Avatar selection and future avatar creation belong in the world/setup window.
 
+Cloud message classification uses three independent gates: an explicit server rollout mode, a server-owned room allow-list, and request-scoped user consent. The composer must say that the target line and bounded pseudonymized room context leave Kokoroe for the configured provider. Consent starts off, is not persisted across logout, and only authorizes selection of an allow-listed presentation id; it never authorizes rewriting or art generation.
+
 The Room Cast add-member flow should recommend existing accounts by username, email, or display name as the user types. Recommendations may show public account identity plus that account's selected avatar for the current world, but adding still creates an account membership rather than an avatar.
 
 Room access is membership-based. A logged-in account may only read, enter, switch to, or send in rooms where it has a room membership. The post-login world screen should list joined rooms only. Public rooms may be discovered through room search and joined from there; private rooms must not appear in public search. Joining a room creates membership for the logged-in account; adding a member creates membership for another account.
