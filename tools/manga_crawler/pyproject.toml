@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kokoroe-manga-crawler"
+version = "0.1.0"
+description = "Authorization-first manga scene crawler and specialist-model analysis pipeline"
+requires-python = ">=3.11,<3.15"
+dependencies = []
+
+[project.optional-dependencies]
+layout = [
+  "ai-edge-litert>=2.1.6",
+  "numpy>=2.3",
+  "Pillow>=11.3",
+]
+ocr = [
+  "manga-ocr>=0.1.16",
+  "Pillow>=10.4",
+]
+dev = []
+
+[project.scripts]
+kokoroe-manga-crawler = "kokoroe_manga_crawler.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,9 +1,15 @@
 .DS_Store
+.codex/ui-drafts/
 .data/
 .next/
 node_modules/
 test-results/
 tsconfig.tsbuildinfo
+.venv/
+__pycache__/
+*.egg-info/
+*.py[cod]
+.pytest_cache/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

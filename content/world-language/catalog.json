@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "voice": {
+    "name": "Kokoroe story language",
+    "principles": [
+      "Use manga and story-world language for moments of identity, movement, and creation.",
+      "Keep fields, permissions, errors, and irreversible actions literal enough to understand immediately.",
+      "Give each operation its own fitting activity phrase instead of reusing a generic loading verb.",
+      "Pair expressive action copy with a plain-language meaning and, when needed, an accessible label."
+    ]
+  },
+  "entries": {
+    "auth.login.eyebrow": {
+      "surface": "authentication",
+      "intent": "Introduce returning-account sign in",
+      "plainMeaning": "Continue to sign in",
+      "status": "approved",
+      "variants": {
+        "default": "Continue your story"
+      }
+    },
+    "auth.login.title": {
+      "surface": "authentication",
+      "intent": "Welcome a returning account",
+      "plainMeaning": "Welcome back",
+      "status": "approved",
+      "variants": {
+        "default": "Turn the next page."
+      }
+    },
+    "auth.login.body": {
+      "surface": "authentication",
+      "intent": "Explain what returns after sign in",
+      "plainMeaning": "Your rooms, avatars, and conversations are ready",
+      "status": "approved",
+      "variants": {
+        "default": "Return to the worlds, characters, and conversations you left between panels."
+      }
+    },
+    "auth.create.eyebrow": {
+      "surface": "authentication",
+      "intent": "Introduce account creation",
+      "plainMeaning": "Create a new account",
+      "status": "approved",
+      "variants": {
+        "default": "Your first panel"
+      }
+    },
+    "auth.create.title": {
+      "surface": "authentication",
+      "intent": "Invite account creation",
+      "plainMeaning": "Create your account",
+      "status": "approved",
+      "variants": {
+        "default": "Your role starts here."
+      }
+    },
+    "auth.create.body": {
+      "surface": "authentication",
+      "intent": "Explain the identity created for the account",
+      "plainMeaning": "Choose the identity used in Kokoroe",
+      "status": "approved",
+      "variants": {
+        "default": "Choose the name that will follow you from panel to panel."
+      }
+    },
+    "auth.login.submit": {
+      "surface": "authentication",
+      "intent": "Submit returning-account credentials",
+      "plainMeaning": "Sign in",
+      "status": "approved",
+      "ariaLabel": "Sign in to Kokoroe",
+      "variants": {
+        "default": "Get Isekaied →",
+        "busy": "Turning to your story…"
+      }
+    },
+    "auth.create.submit": {
+      "surface": "authentication",
+      "intent": "Submit a new account",
+      "plainMeaning": "Create account",
+      "status": "approved",
+      "ariaLabel": "Create a Kokoroe account",
+      "variants": {
+        "default": "Join the Cast →",
+        "busy": "Inking your place…"
+      }
+    },
+    "auth.switch.toCreate.prompt": {
+      "surface": "authentication",
+      "intent": "Introduce the account-creation switch",
+      "plainMeaning": "New to Kokoroe?",
+      "status": "approved",
+      "variants": {
+        "default": "No role in Kokoroe yet?"
+      }
+    },
+    "auth.switch.toCreate.action": {
+      "surface": "authentication",
+      "intent": "Switch from sign in to account creation",
+      "plainMeaning": "Create account",
+      "status": "approved",
+      "ariaLabel": "Create a Kokoroe account",
+      "variants": {
+        "default": "Join the cast"
+      }
+    },
+    "auth.switch.toLogin.prompt": {
+      "surface": "authentication",
+      "intent": "Introduce the returning-account switch",
+      "plainMeaning": "Already have an account?",
+      "status": "approved",
+      "variants": {
+        "default": "Already part of the cast?"
+      }
+    },
+    "auth.switch.toLogin.action": {
+      "surface": "authentication",
+      "intent": "Switch from account creation to sign in",
+      "plainMeaning": "Return to sign in",
+      "status": "approved",
+      "ariaLabel": "Return to Kokoroe sign in",
+      "variants": {
+        "default": "Return to your story"
+      }
+    },
+    "navigation.setup.return": {
+      "surface": "chat navigation",
+      "intent": "Return to world and character selection",
+      "plainMeaning": "Back to setup",
+      "status": "approved",
+      "ariaLabel": "Return to world and character selection",
+      "variants": {
+        "default": "Change World + Character"
+      }
+    },
+    "navigation.bubbleStyle.toggle": {
+      "surface": "chat navigation",
+      "intent": "Show and toggle AI-assisted bubble styling",
+      "plainMeaning": "AI bubble styling",
+      "status": "approved",
+      "ariaLabel": "AI bubble styling",
+      "variants": {
+        "on": "AI Bubble Styling · On",
+        "default": "AI Bubble Styling · Off"
+      }
+    },
+    "navigation.story.leave": {
+      "surface": "global navigation",
+      "intent": "End the current session",
+      "plainMeaning": "Sign out",
+      "status": "approved",
+      "ariaLabel": "Sign out of Kokoroe",
+      "variants": {
+        "default": "Leave the Story"
+      }
+    }
+  }
+}

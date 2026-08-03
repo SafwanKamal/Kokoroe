@@ -7,8 +7,10 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
+    "crawler:test": "python3 tools/manga_crawler/test.py",
     "typecheck": "tsc --noEmit",
-    "check": "npm run test && npm run typecheck && npm run build",
+    "check": "npm run world-language:check && npm run test && npm run crawler:test && npm run typecheck && npm run build",
+    "world-language:check": "node scripts/validate-world-language.mjs",
     "classifier:evaluate": "tsx scripts/evaluate-message-classifier.ts",
     "avatar:add": "node scripts/add-avatar.mjs",
     "db:migrate:supabase": "node scripts/migrate-supabase.mjs"
@@ -18,7 +20,7 @@
     "@supabase/supabase-js": "^2.107.0",
     "ai": "^7.0.31",
     "motion": "^12.40.0",
-    "next": "latest",
+    "next": "16.2.12",
     "postgres": "^3.4.9",
     "react": "latest",
     "react-dom": "latest"

@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "run": {
+    "output_dir": "../../.data/manga-crawler",
+    "purpose": "research-evaluation",
+    "user_agent": "KokoroeMangaCrawler/0.1 (+https://example.invalid/crawler-policy)",
+    "contact": "replace-with-operator-contact@example.invalid",
+    "request_timeout_seconds": 30,
+    "max_retries": 3,
+    "retry_base_seconds": 2,
+    "max_html_bytes": 2000000,
+    "max_image_bytes": 25000000,
+    "max_image_pixels": 80000000,
+    "max_redirects": 5,
+    "respect_robots": true,
+    "fail_closed_robots": true,
+    "allow_private_hosts": false,
+    "stale_claim_seconds": 1800
+  },
+  "sources": [
+    {
+      "source_id": "replace-with-authorized-source",
+      "enabled": false,
+      "rights": {
+        "authorization_id": "replace-with-rights-record",
+        "basis": "explicit-permission",
+        "evidence": "replace-with-local-contract-or-license-record",
+        "permitted_purposes": [
+          "research-evaluation"
+        ],
+        "redistribution_allowed": false,
+        "notes": "Do not enable until the evidence and URLs are real."
+      },
+      "allowed_domains": [
+        "example.invalid"
+      ],
+      "allowed_path_prefixes": [
+        "/authorized/"
+      ],
+      "delay_seconds": 2,
+      "assets": [
+        {
+          "url": "https://example.invalid/authorized/chapter-1/page-001.png",
+          "work_id": "work-001",
+          "chapter_id": "chapter-001",
+          "scene_id": "scene-001",
+          "page_index": 0,
+          "context_before": [
+            "Human-reviewed story context available before this page."
+          ],
+          "character_hints": [
+            "character-a"
+          ]
+        }
+      ]
+    },
+    {
+      "source_id": "replace-with-local-repository-source",
+      "enabled": false,
+      "rights": {
+        "authorization_id": "replace-with-open-license-record",
+        "basis": "open-license",
+        "evidence": "replace-with-official-license-url",
+        "permitted_purposes": [
+          "research-evaluation"
+        ],
+        "redistribution_allowed": false,
+        "notes": "Set redistribution according to the actual source license."
+      },
+      "local_import": {
+        "allowed_roots": [
+          "../../.data/manga-sources/replace-with-source"
+        ],
+        "max_files": 25
+      }
+    }
+  ],
+  "models": [
+    {
+      "profile_id": "manga109s-panel-text-litert",
+      "enabled": false,
+      "adapter": "command-json",
+      "task": "manga-layout-transcription",
+      "model_id": "leoxs22/manga-panel-detector-yolo26n@535bbe1fc1e922d2108f918cd1bce29ba3516196",
+      "tuned_for": [
+        "manga-layout-transcription"
+      ],
+      "license": "Apache-2.0 model; trained on Manga109-s and must retain dataset attribution",
+      "allowed_purposes": [
+        "research-evaluation"
+      ],
+      "general_purpose": false,
+      "command": [
+        "/absolute/path/to/model-venv/bin/python",
+        "-m",
+        "kokoroe_manga_crawler.litert_panel_text",
+        "--input",
+        "{input_json}",
+        "--output",
+        "{output_json}",
+        "--model",
+        "/absolute/path/to/manga_panel_detector_int8.tflite",
+        "--model-sha256",
+        "replace-with-reviewed-64-character-sha256",
+        "--threshold",
+        "0.25"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "profile_id": "magi-layout-research",
+      "enabled": false,
+      "adapter": "command-json",
+      "task": "manga-layout-transcription",
+      "model_id": "ragavsachdeva/magiv3",
+      "tuned_for": [
+        "manga-layout-transcription"
+      ],
+      "license": "academic-research-only; verify current upstream terms",
+      "allowed_purposes": [
+        "research-evaluation"
+      ],
+      "general_purpose": false,
+      "command": [
+        "python3",
+        "/absolute/path/to/authorized-magi-wrapper.py",
+        "--input",
+        "{input_json}",
+        "--output",
+        "{output_json}"
+      ],
+      "timeout_seconds": 600
+    },
+    {
+      "profile_id": "manga-ocr-japanese",
+      "enabled": false,
+      "adapter": "manga-ocr",
+      "task": "manga-ocr",
+      "model_id": "kha-white/manga-ocr-base",
+      "tuned_for": [
+        "manga-ocr"
+      ],
+      "license": "Apache-2.0; verify model and dependency terms",
+      "allowed_purposes": [
+        "research-evaluation"
+      ],
+      "general_purpose": false
+    },
+    {
+      "profile_id": "project-manga-context-normalizer",
+      "enabled": false,
+      "adapter": "command-json",
+      "task": "manga-context-normalization",
+      "model_id": "project-owned/manga-context-normalizer-v1",
+      "tuned_for": [
+        "manga-context-normalization"
+      ],
+      "license": "project-owned-evaluation-license",
+      "allowed_purposes": [
+        "research-evaluation"
+      ],
+      "general_purpose": false,
+      "command": [
+        "python3",
+        "/absolute/path/to/manga-context-wrapper.py",
+        "--input",
+        "{input_json}",
+        "--output",
+        "{output_json}"
+      ],
+      "timeout_seconds": 300
+    }
+  ]
+}

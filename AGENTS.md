@@ -37,29 +37,36 @@ Prefer expressive, human-like, manga-inspired layouts:
 
 Keep the app usable. Creativity should support the chat experience, not make the interface confusing.
 
+## World Language
+
+- Store recurring stylized interface copy in `content/world-language/catalog.json` and consume it through `app/world-language.ts`; do not scatter one-off themed strings through components.
+- Follow `docs/WORLD_LANGUAGE_PIPELINE.md` when adding or changing product-system copy.
+- Keep sensitive, destructive, legal, error, and form language literal enough to understand immediately. Pair unusually expressive actions with a plain accessible label.
+- Choose activity phrases by operation and UI state rather than rotating synonyms randomly.
+
 ## Color Palette
 
 Use this palette as the default visual foundation for Kokoroe:
 
-- Paper Base: `#F6EEDC`
-- Paper Warm: `#EFE2C7`
-- Ink Black: `#12110F`
-- Soft Ink: `#2C2924`
-- Panel Border: `#070707`
-- Primary Blue: `#176BB3`
-- Sky Wash: `#BFD9E8`
-- School Green: `#2F7D3B`
-- Quiet Blue: `#1E69A8`
-- Plot Coral: `#C94E3B`
-- Ramen Gold: `#C58A16`
-- Highlight Yellow: `#F1C94C`
-- Success Mint: `#7EBF8A`
-- Error Red: `#D94835`
-- Field Cream: `#F9F4E8`
-- Divider Gray: `#B9AEA0`
-- Disabled Blue Gray: `#7E909E`
+- Paper Base: `#F2E7D3`
+- Paper Warm: `#E7D7BC`
+- Ink Black: `#24221F`
+- Soft Ink: `#4B4943`
+- Panel Border: `#181916`
+- Primary Blue: `#567181`
+- Sky Wash: `#C7D4D2`
+- School Green: `#5B6F5B`
+- Quiet Blue: `#596F7B`
+- Plot Coral: `#936156`
+- Ramen Gold: `#80683F`
+- Highlight Yellow: `#D8C58C`
+- Success Mint: `#A6BBA1`
+- Error Red: `#9B574E`
+- Field Cream: `#F7F0E3`
+- Divider Gray: `#B8AA97`
+- Disabled Blue Gray: `#8B9693`
 
-Favor warm manga paper, deep ink borders, and room-specific accent colors. Avoid drifting into a generic dark SaaS palette or a one-note purple/blue theme.
+Favor warm manga paper, charcoal ink borders, and desaturated room-specific accents. Color should feel printed and slightly faded rather than digitally saturated; reserve the strongest contrast for text, boundaries, focus, and critical state communication. Avoid drifting into a generic dark SaaS palette or a one-note purple/blue theme.
 
 ## Coding Standards
 

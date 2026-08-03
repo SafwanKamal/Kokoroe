@@ -7,6 +7,7 @@ import {
   Reggae_One,
   RocknRoll_One,
 } from "next/font/google";
+import { ChibiCursor } from "./chibi-cursor";
 import "./globals.css";
 
 const uiFont = M_PLUS_Rounded_1c({
@@ -70,7 +71,10 @@ export default function RootLayout({
 
   return (
     <html className={fontClasses} lang="en">
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        <ChibiCursor />
+      </body>
     </html>
   );
 }

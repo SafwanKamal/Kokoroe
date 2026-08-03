@@ -36,7 +36,9 @@ import {
   type MessagePresentationId,
 } from "./message-presentations";
 import { subscribeToRoomMessages } from "./realtime";
+import { CLOUD_STYLE_CONSENT_STORAGE_KEY, PRIVACY_POLICY_VERSION } from "./privacy-policy";
 import type { KokoroePublicUser } from "./kokoroe-store";
+import { getWorldCopy, getWorldCopyAriaLabel } from "./world-language";
 
 type AppStep = "login" | "scene" | "chat";
 type AuthMode = "login" | "create";
@@ -495,6 +497,7 @@ export default function Home() {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
+  const [privacyAgreementAccepted, setPrivacyAgreementAccepted] = useState(false);
   const [draft, setDraft] = useState("");
   const [memberAccountIdentifier, setMemberAccountIdentifier] = useState("");
   const [memberSearchResults, setMemberSearchResults] = useState<KokoroePublicUser[]>([]);
@@ -583,6 +586,11 @@ export default function Home() {
     : screenMotion;
   const sendVerb = roomSendVerbs[selectedRoom.id] ?? "Send";
 
+  function updateCloudClassificationConsent(consented: boolean) {
+    setCloudClassificationConsent(consented);
+    window.sessionStorage.setItem(CLOUD_STYLE_CONSENT_STORAGE_KEY, consented ? "enabled" : "disabled");
+  }
+
   function applyProfile(profile: { currentRoomId: string; selectedAvatarIds: Record<string, string> }) {
     setSelectedRoomId(profile.currentRoomId);
     setSelectedAvatarIds((currentSelections) => ({
@@ -594,6 +602,12 @@ export default function Home() {
   async function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setApiError("");
+
+    if (!privacyAgreementAccepted) {
+      setApiError("Read and accept the Privacy Policy before entering Kokoroe.");
+      return;
+    }
+
     setIsLoggingIn(true);
 
     try {
@@ -608,6 +622,10 @@ export default function Home() {
       setDisplayName(result.user.displayName);
       setCurrentUserId(result.user.id);
       setSessionId(result.session.id);
+      window.sessionStorage.setItem(
+        CLOUD_STYLE_CONSENT_STORAGE_KEY,
+        cloudClassificationConsent ? "enabled" : "disabled",
+      );
       applyProfile(result.user.profile);
       await refreshRooms();
       setAppStep("scene");
@@ -727,12 +745,14 @@ export default function Home() {
       setSessionId(undefined);
       setCurrentUserId(undefined);
       setPassword("");
+      setPrivacyAgreementAccepted(false);
       setDraft("");
       setMemberAccountIdentifier("");
       setMemberSearchResults([]);
       setRoomSearchQuery("");
       setMessages([]);
       setCloudClassificationConsent(false);
+      window.sessionStorage.removeItem(CLOUD_STYLE_CONSENT_STORAGE_KEY);
       setClassifierPolicy(disabledClassifierPolicy);
       setIsMemberFormOpen(false);
       setMemberError("");
@@ -947,6 +967,9 @@ export default function Home() {
         setDisplayName(result.user.displayName);
         setCurrentUserId(result.user.id);
         setSessionId(result.session.id);
+        setCloudClassificationConsent(
+          window.sessionStorage.getItem(CLOUD_STYLE_CONSENT_STORAGE_KEY) === "enabled",
+        );
         applyProfile(result.user.profile);
         setAppStep("scene");
       })
@@ -1164,11 +1187,39 @@ export default function Home() {
             </div>
 
             <div className="nav-actions">
-              <button className="portal-return" key="chat-back" onClick={() => setAppStep("scene")} type="button">
-                Back to Setup
+              <button
+                aria-label={getWorldCopyAriaLabel("navigation.setup.return")}
+                className="portal-return"
+                data-cursor-intent="action"
+                key="chat-back"
+                onClick={() => setAppStep("scene")}
+                type="button"
+              >
+                {getWorldCopy("navigation.setup.return")}
               </button>
-              <button className="portal-return" key="chat-logout" onClick={logout} type="button">
-                Logout
+              {classifierPolicy.enabled ? (
+                <button
+                  aria-label={getWorldCopyAriaLabel("navigation.bubbleStyle.toggle")}
+                  aria-pressed={cloudClassificationConsent}
+                  className="ai-style-toggle"
+                  data-enabled={cloudClassificationConsent}
+                  key="chat-ai-style"
+                  onClick={() => updateCloudClassificationConsent(!cloudClassificationConsent)}
+                  type="button"
+                >
+                  {getWorldCopy("navigation.bubbleStyle.toggle", {
+                    variant: cloudClassificationConsent ? "on" : "default",
+                  })}
+                </button>
+              ) : null}
+              <button
+                aria-label={getWorldCopyAriaLabel("navigation.story.leave")}
+                className="portal-return"
+                key="chat-logout"
+                onClick={logout}
+                type="button"
+              >
+                {getWorldCopy("navigation.story.leave")}
               </button>
             </div>
           </motion.aside>
@@ -1295,6 +1346,8 @@ export default function Home() {
                         <label>
                           Account
                           <input
+                            aria-describedby={memberError ? "member-add-error" : undefined}
+                            aria-invalid={memberError ? true : undefined}
                             maxLength={80}
                             onChange={(event) => {
                               setMemberError("");
@@ -1337,7 +1390,7 @@ export default function Home() {
                             );
                           })}
                         </div>
-                        {memberError ? <div className="member-error">{memberError}</div> : null}
+                        {memberError ? <div className="member-error" id="member-add-error" role="alert">{memberError}</div> : null}
                         <button disabled={isAddingMember || !memberAccountIdentifier.trim()} type="submit">
                           {isAddingMember ? "Adding" : "Add Account"}
                         </button>
@@ -1396,7 +1449,7 @@ export default function Home() {
                 style={{ objectPosition: selectedRoom.scenePosition }}
               />
               {isLoadingMessages ? <div className="api-status">Loading panels...</div> : null}
-              {apiError ? <div className="api-status" data-tone="error">{apiError}</div> : null}
+              {apiError ? <div className="api-status" data-tone="error" role="alert">{apiError}</div> : null}
               <AnimatePresence initial={false}>
                 {roomMessages.flatMap((message, index) => {
                   const isOwnMessage = message.userId
@@ -1514,6 +1567,7 @@ export default function Home() {
                             aria-expanded={revealedProfileMessageId === message.id}
                             aria-label={`View profile for ${messageAccount?.displayName ?? message.author}`}
                             className="message-avatar"
+                            data-cursor-intent="inspect"
                             key="message-avatar"
                             onClick={() => toggleMessageProfile(message.id)}
                             style={messageAvatar ? getAvatarStyle(messageAvatar) : { "--avatar-accent": selectedRoom.accentColor } as React.CSSProperties}
@@ -1547,56 +1601,45 @@ export default function Home() {
                   return messageNodes;
                 })}
               </AnimatePresence>
-              <div key="typing-card" className="typing-card">
-                <span key="typing-copy">Panel open</span>
-                <i key="typing-dot-1" />
-                <i key="typing-dot-2" />
-                <i key="typing-dot-3" />
-              </div>
             </div>
 
             <form className="chat-composer" key="chat-composer" onSubmit={sendLine}>
-              <div className="composer-avatar" aria-hidden="true">
-                <img alt="" src={selectedAvatar.imageSrc} />
-                <span>{selectedAvatar.mark}</span>
+              <div className="composer-identity" aria-hidden="true">
+                <div className="composer-avatar">
+                  <img alt="" src={selectedAvatar.imageSrc} />
+                </div>
+                <b>{selectedAvatar.name}</b>
               </div>
               <div className="composer-status" aria-live="polite">
                 <span aria-hidden="true" />
-                Live in {selectedRoom.name} as {selectedAvatar.name}
+                <strong>Live panel</strong>
+                <em>{selectedRoom.name}</em>
               </div>
-              <label>
+              <label className="composer-dialogue-frame">
                 <span className="composer-label-row">
-                  <span>{sendVerb} a line</span>
+                  <span><b>{sendVerb}</b> a line</span>
                   <em data-near-limit={draft.length >= 96}>{draft.length}/{MESSAGE_CHARACTER_LIMIT}</em>
                 </span>
-                <textarea
-                  maxLength={MESSAGE_CHARACTER_LIMIT}
-                  onChange={(event) => setDraft(event.target.value)}
-                  onKeyDown={sendLineOnEnter}
-                  placeholder={`Write something for ${selectedRoom.name}`}
-                  rows={3}
-                  value={draft}
-                />
-              </label>
-              <button disabled={isSending} type="submit">{isSending ? "Sending" : sendVerb}</button>
-              {isClassifierCanaryRoom ? (
-                <label className="classifier-consent">
-                  <input
-                    checked={cloudClassificationConsent}
-                    onChange={(event) => setCloudClassificationConsent(event.target.checked)}
-                    type="checkbox"
+                <span className="composer-input-shell">
+                  <textarea
+                    data-cursor-intent="write"
+                    maxLength={MESSAGE_CHARACTER_LIMIT}
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={sendLineOnEnter}
+                    placeholder={`Write something for ${selectedRoom.name}`}
+                    rows={3}
+                    value={draft}
                   />
-                  <span className="classifier-consent-copy">
-                    <strong>AI bubble assist</strong>
-                    <small>
-                      {classifierPolicy.contextStrategy === "discussion-compaction"
-                        ? `Each opted-in line, topic summaries derived from up to ${classifierPolicy.discussionSourceMessageLimit} room messages, and the latest ${classifierPolicy.discussionTailMessageLimit} messages are sent to OpenRouter with anonymous speaker labels. `
-                        : `Each opted-in line and up to ${classifierPolicy.recentMessageLimit} recent room messages are sent to OpenRouter with anonymous speaker labels. `}
-                      Kokoroe only selects the bubble style; your words stay unchanged.
-                    </small>
-                  </span>
-                </label>
-              ) : null}
+                </span>
+              </label>
+              <button
+                className="composer-send-action"
+                data-cursor-intent="action"
+                disabled={isSending}
+                type="submit"
+              >
+                {isSending ? "Sending" : sendVerb}
+              </button>
             </form>
           </motion.div>
         </motion.section>
@@ -1636,71 +1679,161 @@ export default function Home() {
                 src={art.src}
               />
             ))}
+
+            <div className="login-hero-logo">
+              <img alt="Kokoroe" src="/brand/kokoroe-logo-wordmark.svg" />
+            </div>
+
+            <div className="login-scene-meta">
+              <span>Current scene</span>
+              <strong>{activeLoginArt.name}</strong>
+            </div>
+
+            <div className="login-scene-dots" aria-label="Choose a login scene" role="group">
+              {loginSceneArts.map((art, index) => (
+                <button
+                  aria-label={art.name}
+                  aria-pressed={index === loginArtIndex}
+                  key={art.id}
+                  onClick={() => setLoginArtIndex(index)}
+                  type="button"
+                />
+              ))}
+            </div>
           </div>
 
           <div className="login-form-panel" key="login-form-panel">
-            <div className="login-logo">
-              <img alt="Kokoroe" src="/brand/kokoroe-logo-wordmark.svg" />
-              <span className="login-heart" aria-hidden="true">♥</span>
-            </div>
-
             <form className="entry-form login-form" onSubmit={submitLogin}>
-              <div className="login-welcome">
-                <strong>{authMode === "create" ? "Start your arc!" : "Welcome back!"}</strong>
+              <header className="login-intro">
+                <span>
+                  {authMode === "create"
+                    ? getWorldCopy("auth.create.eyebrow")
+                    : getWorldCopy("auth.login.eyebrow")}
+                </span>
+                <h1>
+                  {authMode === "create"
+                    ? getWorldCopy("auth.create.title")
+                    : getWorldCopy("auth.login.title")}
+                </h1>
+                <p>
+                  {authMode === "create"
+                    ? getWorldCopy("auth.create.body")
+                    : getWorldCopy("auth.login.body")}
+                </p>
+              </header>
+
+              <div className="login-fields">
+                <label className="login-field-shell">
+                  <span>Username or email</span>
+                  <input
+                    value={displayName}
+                    onChange={(event) => setDisplayName(event.target.value)}
+                    autoCapitalize="none"
+                    autoComplete="username"
+                    autoCorrect="off"
+                    placeholder="Enter your username or email"
+                    spellCheck={false}
+                  />
+                </label>
+                <label className="login-field-shell">
+                  <span>Password</span>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete={authMode === "create" ? "new-password" : "current-password"}
+                    placeholder={authMode === "create" ? "At least 8 characters" : "Enter your password"}
+                  />
+                </label>
               </div>
 
-              <label>
-                Display name
-                <input
-                  value={displayName}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  autoCapitalize="none"
-                  autoComplete={authMode === "create" ? "username" : "username"}
-                  autoCorrect="off"
-                  placeholder="Username or Email"
-                  spellCheck={false}
-                />
-              </label>
-              <label>
-                Password
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  autoComplete={authMode === "create" ? "new-password" : "current-password"}
-                  placeholder={authMode === "create" ? "Password (8+ characters)" : "Password"}
-                />
-              </label>
               {authMode === "login" ? (
                 <a className="forgot-link" href="#login">
                   Forgot password?
                 </a>
               ) : null}
 
-              {apiError ? <div className="api-status" data-tone="error">{apiError}</div> : null}
+              <section className="login-consent-panel" aria-labelledby="login-consent-heading">
+                <header>
+                  <h2 id="login-consent-heading">Before you continue</h2>
+                  <span>{classifierPolicy.enabled ? "One required · one optional" : "One required agreement"}</span>
+                </header>
+                <div className="login-consent-stack">
+                  <label className="login-consent-row" data-kind="policy">
+                    <input
+                      checked={privacyAgreementAccepted}
+                      onChange={(event) => setPrivacyAgreementAccepted(event.target.checked)}
+                      required
+                      type="checkbox"
+                    />
+                    <span>
+                      <strong>Privacy agreement</strong>
+                      <small>
+                        I have read and agree to the <a href="/privacy" rel="noreferrer" target="_blank">Privacy Policy</a>
+                        {` (version ${PRIVACY_POLICY_VERSION}).`}
+                      </small>
+                    </span>
+                    <b>Required</b>
+                  </label>
+                  {classifierPolicy.enabled ? (
+                    <label className="login-consent-row" data-kind="ai">
+                      <input
+                        checked={cloudClassificationConsent}
+                        onChange={(event) => setCloudClassificationConsent(event.target.checked)}
+                        type="checkbox"
+                      />
+                      <span>
+                        <strong>AI bubble styling</strong>
+                        <small>
+                          Send each opted-in line and bounded anonymous room context to OpenRouter to choose a bubble style.
+                          Your words are not rewritten. You can switch this off in chat.
+                        </small>
+                      </span>
+                      <b>Optional</b>
+                    </label>
+                  ) : null}
+                </div>
+              </section>
 
-              <button className="enter-button login-enter" disabled={isLoggingIn} type="submit">
-                {isLoggingIn
-                  ? "Opening portal..."
-                  : authMode === "create"
-                    ? "Create account →"
-                    : "Get Isekaied →"}
-              </button>
-
-              <div className="login-divider">
-                <span>★</span>
-              </div>
+              {apiError ? <div className="api-status login-api-status" data-tone="error" role="alert">{apiError}</div> : null}
 
               <button
-                className="create-account-button"
-                onClick={() => {
-                  setApiError("");
-                  setAuthMode((currentMode) => (currentMode === "login" ? "create" : "login"));
-                }}
-                type="button"
+                aria-label={getWorldCopyAriaLabel(
+                  authMode === "create" ? "auth.create.submit" : "auth.login.submit",
+                )}
+                className="enter-button login-enter"
+                data-cursor-intent="action"
+                disabled={isLoggingIn || !privacyAgreementAccepted}
+                type="submit"
               >
-                {authMode === "login" ? "Create account" : "Back to login"}
+                {getWorldCopy(
+                  authMode === "create" ? "auth.create.submit" : "auth.login.submit",
+                  { variant: isLoggingIn ? "busy" : "default" },
+                )}
               </button>
+
+              <p className="login-switch-copy">
+                {authMode === "login"
+                  ? getWorldCopy("auth.switch.toCreate.prompt")
+                  : getWorldCopy("auth.switch.toLogin.prompt")}
+                <button
+                  aria-label={getWorldCopyAriaLabel(
+                    authMode === "login"
+                      ? "auth.switch.toCreate.action"
+                      : "auth.switch.toLogin.action",
+                  )}
+                  className="create-account-button"
+                  onClick={() => {
+                    setApiError("");
+                    setAuthMode((currentMode) => (currentMode === "login" ? "create" : "login"));
+                  }}
+                  type="button"
+                >
+                  {authMode === "login"
+                    ? getWorldCopy("auth.switch.toCreate.action")
+                    : getWorldCopy("auth.switch.toLogin.action")}
+                </button>
+              </p>
             </form>
           </div>
         </motion.section>
@@ -1752,6 +1885,7 @@ export default function Home() {
                 <motion.button
                   aria-pressed={room.id === selectedRoomId}
                   className="wide-scene-card"
+                  data-cursor-intent="action"
                   data-selected={room.id === selectedRoomId}
                   key={room.id}
                   layout
@@ -1897,11 +2031,16 @@ export default function Home() {
             </div>
           </div>
 
-          {apiError ? <div className="api-status scene-api-status" data-tone="error">{apiError}</div> : null}
+          {apiError ? <div className="api-status scene-api-status" data-tone="error" role="alert">{apiError}</div> : null}
 
           <div className="scene-select-footer" key="scene-footer">
-            <button className="portal-return" onClick={logout} type="button">
-              Logout
+            <button
+              aria-label={getWorldCopyAriaLabel("navigation.story.leave")}
+              className="portal-return"
+              onClick={logout}
+              type="button"
+            >
+              {getWorldCopy("navigation.story.leave")}
             </button>
             {isSelectedRoomJoined ? (
               <button className="enter-button" onClick={enterChatWithAvatar} type="button">
