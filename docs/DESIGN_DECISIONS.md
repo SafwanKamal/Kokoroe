@@ -20,6 +20,10 @@ Prefer:
 - Fun but readable typography
 - World-specific visual flavor
 
+The shared site palette uses warm, aged-paper surfaces with softened charcoal ink and desaturated blue, green, coral, and gold accents. It should feel like faded print rather than a high-saturation messaging product. Readability, focus indication, semantic errors, and panel boundaries keep deliberate contrast; decorative washes and room color fields stay quieter.
+
+Treat paper as a physical material system, not a beige fill. A static low-opacity fiber substrate may cross the whole page, while manga screentone belongs selectively over scene artwork, atmospheric edges, and quiet panel regions. Scene imagery should be slightly desaturated and warmed so it reads as ink absorbed into stock. Keep body copy, inputs, focus rings, errors, and control boundaries comparatively clean; never use moving grain, blanket high-opacity dots, or registration drift on readable text. The implementation rationale and source notes live in `docs/PAPER_MATERIAL_RESEARCH.md`.
+
 ## Chat Bubble Direction
 
 Chat bubbles should not look too perfect.
@@ -53,7 +57,7 @@ On desktop, the chat window should use most of the available viewport instead of
 
 ## Production Message Template Assets
 
-Use the lightweight SVGs in `docs/RerferenceImages/chat-template-svgs-production/` as implementation reference assets, not the heavier cropped reference SVGs.
+Use the lightweight SVGs in `docs/ReferenceImages/chat-template-svgs-production/` as implementation reference assets, not the heavier cropped reference SVGs.
 
 - The production SVGs should be decorative shells or accent layers; render message copy as real HTML/CSS text on top.
 - Keep message text selectable, accessible, and responsive.
@@ -75,6 +79,8 @@ Examples:
 Use expressive language when it supports the world or character tone.
 
 Do not make labels so unusual that users cannot understand the interface.
+
+Stylized product copy now follows the catalog and review workflow in `docs/WORLD_LANGUAGE_PIPELINE.md`. Components consume semantic keys from `content/world-language/catalog.json` through the typed helper in `app/world-language.ts`. Each entry preserves a plain-language meaning, review status, and deterministic state variants; expressive controls carry literal accessible labels when the visible metaphor alone is not clear enough. Keep legal consent, errors, form fields, and destructive actions comparatively literal.
 
 ## Message Tone Typography
 
@@ -163,6 +169,10 @@ Input focus effects should avoid generic blue browser rings, cheap dot fields, a
 
 Message bubbles should stay visually still until a non-generic, manga-specific motion language is designed and approved. Do not add placeholder pop, bounce, wiggle, ghost-fade, or generic spawn animations to settled transcript bubbles just because the catalog has a `motion` value. If a bubble needs motion, prefer shell-specific environmental details that belong to the artwork, such as rain lines animated around the sad bubble, while keeping the bubble frame and text safe area stable.
 
+The approved bubble-motion language extends that environmental-detail rule across expressive presentations: whisper motes, mutter ink ticks, exclaim speed flashes, announce broadcast rings, grandiose gold glitter, and sad rain may animate around stable shells. Shout is a shell-motion exception and enters with a strong exponential scale-up, brief overshoot, and snap-settle. Scribble is a construction exception: a visible nib draws its outline and broad clipped ink passes, resolves into the completed catalog SVG, and reveals the copy only after the drawing is finished. Non-rain perimeter effects use shell-specific SVG overlays that share the exact template viewBox, mirror with outgoing art, and stay beneath copy. Incoming bubbles share one left anchor and outgoing bubbles share one right anchor; tone must not horizontally indent an otherwise aligned conversation run.
+
+The transcript stays visually still by default. `sad` rain is the accepted environmental exception and may remain active on the newest three sad messages; a recent Scribble may perform its one-shot construction on arrival or reload. Other shell-specific rigs stay mounted but hidden and paused until hover or keyboard focus. Historical Scribble messages replay on hover/focus, and reduced motion always shows the completed SVG and text immediately.
+
 Each world owns its own cast of avatars. Switching worlds from chat should immediately restore the last avatar selected for that world; changing that remembered identity happens through the setup screen, not by carrying an avatar between worlds.
 
 World-owned avatars should stay visibly identifiable after selection: use portrait art, individual accent color, and a concise signature motif in setup and chat presence surfaces while keeping names and message text readable.
@@ -170,6 +180,8 @@ World-owned avatars should stay visibly identifiable after selection: use portra
 Avatars should appear as illustrated, themed identities rather than initial-only tokens. Use their portrait and personal accent in setup selection and chat presence so changing character is visible in the experience.
 
 Chatroom members are accounts, not avatars. Adding someone in the chat window adds an existing account to that room; it must not create a sendable avatar or let the current user send as that account. Avatar selection and future avatar creation belong in the world/setup window.
+
+Cloud message classification uses three independent gates: an explicit server rollout mode, a server-owned room allow-list, and request-scoped user consent. Keep the provider/purpose disclosure beside the login decision rather than repeating a warning inside the composer. Consent starts off, is scoped to the browser session, can be withdrawn from a visible chat-navigation control, is cleared on logout, and only authorizes selection of an allow-listed presentation id; it never authorizes rewriting or art generation. The required Privacy Policy agreement remains separate from this optional AI choice so declining cloud processing does not block ordinary chat use.
 
 The Room Cast add-member flow should recommend existing accounts by username, email, or display name as the user types. Recommendations may show public account identity plus that account's selected avatar for the current world, but adding still creates an account membership rather than an avatar.
 
@@ -198,7 +210,27 @@ Desktop panels should feel vertically balanced in the viewport. Major windows, w
 
 Motion should make screen changes feel like moving through manga panels, not generic app fades. Use `motion/react` for screen transitions, selectable-card feedback, message entry movement, and layout changes. CSS animations may carry ambient paper grain, subtle scene breathing, speed-line movement, selected-state energy, and typing indicators. Always respect reduced-motion preferences.
 
+The chat shell should read as a living manga page: keep strong outer and panel boundaries, use ink gutters between navigation and conversation, let room art and restrained world-specific atmosphere animate behind stable content, and create transcript rhythm through spacing and controlled indentation rather than moving settled bubbles. The composer should foreground the selected avatar and use an explicit room-owned action verb (`Send`, `Whisper`, `Serve`, or `Reveal`) while keeping the action location predictable.
+
+The composer is a hard-edged, edge-to-edge manga panel boundary, not a rounded floating card. Give it character with squared or angular ink rails, notched action details, hard offset shadows, and small focus-owned signals that do not move the textarea or send target. Those signals should ease continuously through transform, opacity, color, and shadow rather than stepped width or height changes that make the control appear to resize. Manga page research supports tight gutters for related controls, a restrained diagonal for emphasis, and rectangular caption language at panel edges; the implemented desktop character-ID slab, live-panel caption, and clipped dialogue frame apply those ideas without changing control order. On mobile, collapse the identity slab to the framed portrait only so it does not become an empty full-height black block, and do not overlay the portrait with a redundant yellow avatar mark. Keep the send action as the familiar solid rectangular room-accent button with a hard ink shadow; do not turn it into a directional wedge. Do not add pill/capsule rounding, inset card margins, broad soft shadows, or ambient whole-panel drift. AI disclosure and choice belong at login with an always-available chat toggle, not as composer copy.
+
+The authenticated composer cleanup keeps that hard-edged boundary but reduces its internal hierarchy: the live-panel context is a quiet ruled caption instead of a dominant black banner, the paper field and send action share one compact baseline, the avatar is a small manuscript stamp, and screentone does not compete with typing. Avoid oversized placeholder lettering, duplicated black labels, detached counters, or decorative rails that visually outweigh the message field.
+
+Major room, setup, login, and document titles use the existing RocknRoll One role as printed manga lettering rather than the heavier Dela Gothic impact face. Render these headings in softened warm charcoal with a faint paper-colored ink spread; reserve the dense impact face and darkest ink for deliberate exclamations, panel boundaries, and critical state communication. Body copy, controls, and accessible labels keep their established readable roles.
+
+Conventional login, search, and member-entry fields lift two pixels up and left on focus like a loose paper slip, then drift slowly to and fro within an approximately two-pixel range while their layout footprint remains unchanged. Use a small hard offset shadow and a slow non-stepped loop; reduced-motion users receive the static lift only. Search and member-entry fields also use one accent border, a narrow inset registration rail, and a faint paper halo. Do not stack the shared solid outline on top of those signals; the resulting double blue rectangle looks like an accidental nested selection and visually outweighs the field. The composer textarea remains stationary because its accepted writing geometry is more important than the floating-field motif.
+
+Shared controls use three intentional border tiers (2px controls, 3px emphasized controls, 4px panel boundaries), compact/standard/large height tokens, hard ink shadows, and a keyboard-visible 3px focus outline. Compact interactive targets should remain at least 44px tall, especially on mobile. Room and avatar accents may color focus and selected states, while error and disabled states must remain readable. Square or cut-paper geometry is the structural default, but visual character must come from the composition before individual decoration: avoid scattering coded plates, tabs, and clipped boxes across otherwise unrelated controls. Current VIZ, WEBTOON, and Marvel interface review reinforces a deliberate split of roles for login: one strong artwork, the Kokoroe wordmark, and a tiny scene indicator carry the comic identity; labeled fields, agreements, and account actions remain calm editorial paper UI. Keep required and optional consent inside one neutral frame, reserve teal for links/focus/the primary action, and do not return to chapter headlines, player folios, thumbnail rails, or game-HUD ornament on every control.
+
 Major page transitions may include a brief manga portal/jump burst, such as a character silhouette diving into the selected world. Keep it short and decorative so it adds life without delaying navigation.
+
+## Chibi Cursor Companion
+
+Treat the personalized cursor as an optional desktop companion, not as essential navigation or a generic animation layer. Use a pointer-transparent DOM overlay with a stable, visible hotspot and a small catalog-driven pose vocabulary. Pose changes may respond to actions, writing, inspection, disabled targets, and pointer press, but they must never alter hit areas or replace the control's normal hover, focus, disabled, busy, or error treatment.
+
+Mount the companion only for fine pointers with hover. On text-entry controls, use one themed I-beam instead of stacking a generic marker over the native cursor. Treat checkboxes, radios, and button-like inputs as actions. For the selected humanoid Ink Page Sprite, use a small manga pointing hand with a blue sleeve instead of an abstract arrow or character-incompatible cat tail: anchor its fingertip on the bounded, viewport-clamped guide orbit and extend its wrist inward toward the chibi so it reads as part of the character. Hide the hand when no valid target exists. Keep native precision cursors for selectable non-entry text, resizing, dragging, selects, and other operating-system interactions; do not mount it on touch/coarse-pointer devices. Provide a classic-cursor preference and restore the native cursor on loading or asset failure. Respect reduced motion, avoid constant bobbing, trails, autonomous movement, and random pose rotation, and update pointer position without causing React renders.
+
+Cursor pose assets use one registered transparent canvas per companion pack and a catalog-owned hotspot/offset contract. Begin with one reviewed canonical chibi pack, then add selected-avatar packs individually through the visual-asset review boundary. Do not ship mixed or partial character packs. The detailed delivery and QA contract lives in `docs/CHIBI_CURSOR_PLAN.md`.
 
 ## Design Review Rule
 

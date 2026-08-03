@@ -9,6 +9,11 @@ const dataStoreTempPath = `${dataStorePath}.tmp`;
 
 async function resetStore() {
   delete process.env.KOKOROE_STORE;
+  delete process.env.KOKOROE_MESSAGE_CLASSIFIER;
+  delete process.env.KOKOROE_CLASSIFIER_PROVIDER;
+  delete process.env.KOKOROE_CLASSIFIER_MODEL;
+  delete process.env.KOKOROE_CLASSIFIER_CONTEXT;
+  delete process.env.KOKOROE_CLASSIFIER_CANARY_ROOMS;
   vi.resetModules();
 
   const globalStore = globalThis as typeof globalThis & {
@@ -168,6 +173,34 @@ describe("kokoroe store contract", () => {
     const roomMessages = await store.getMessages("ramen-stand", account.session.id);
     expect(roomMessages.status).toBe(200);
     expect("messages" in roomMessages ? roomMessages.messages : []).toContainEqual(result.message);
+  });
+
+  it("keeps cloud classification behind explicit request consent", async () => {
+    process.env.KOKOROE_MESSAGE_CLASSIFIER = "global-cloud";
+    process.env.KOKOROE_CLASSIFIER_PROVIDER = "openrouter";
+    process.env.KOKOROE_CLASSIFIER_CANARY_ROOMS = "after-school";
+
+    const store = await loadStoreModule();
+    const account = await createTestAccount(store, "classifier-consent");
+    const roomsPayload = await store.getRoomsPayload();
+    const avatar = roomsPayload.avatarsByRoom["after-school"][0];
+    const result = await store.createMessage({
+      avatarId: avatar.id,
+      cloudClassificationConsent: false,
+      roomId: "after-school",
+      sessionId: account.session.id,
+      text: "Keep the original presentation without contacting a provider.",
+      tone: "whisper",
+    });
+
+    expect(result.status).toBe(201);
+
+    if ("error" in result) {
+      throw new Error(result.error);
+    }
+
+    expect(result.message.tone).toBe("whisper");
+    expect(result.message.text).toBe("Keep the original presentation without contacting a provider.");
   });
 
   it("requires room membership before reading or sending in a room", async () => {

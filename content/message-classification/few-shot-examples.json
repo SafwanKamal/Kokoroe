@@ -1,0 +1,123 @@
+[
+  {
+    "id": "contrast-neutral-commitment",
+    "input": {
+      "speaker": "target-speaker",
+      "text": "Got it.",
+      "context": {
+        "strategy": "recent-messages",
+        "recentTurns": [
+          { "speaker": "participant-1", "text": "Can you bring the blue markers to class?" },
+          { "speaker": "target-speaker", "text": "They are already in my bag." }
+        ]
+      }
+    },
+    "output": {
+      "presentationId": "plain",
+      "confidence": 0.93,
+      "reason": "A routine commitment in ordinary planning context."
+    }
+  },
+  {
+    "id": "contrast-private-commitment",
+    "input": {
+      "speaker": "target-speaker",
+      "text": "Got it.",
+      "context": {
+        "strategy": "recent-messages",
+        "recentTurns": [
+          { "speaker": "participant-1", "text": "Hide the envelope before anyone comes upstairs." },
+          { "speaker": "target-speaker", "text": "Do not mention it in the hall." }
+        ]
+      }
+    },
+    "output": {
+      "presentationId": "whisper",
+      "confidence": 0.9,
+      "reason": "The same commitment functions as quiet private speech in this context."
+    }
+  },
+  {
+    "id": "contextual-mutter",
+    "input": {
+      "speaker": "target-speaker",
+      "text": "Lovely.",
+      "context": {
+        "strategy": "recent-messages",
+        "recentTurns": [
+          { "speaker": "participant-1", "text": "The umbrella just turned inside out." },
+          { "speaker": "target-speaker", "text": "And the shop locked its doors." }
+        ]
+      }
+    },
+    "output": {
+      "presentationId": "mutter",
+      "confidence": 0.91,
+      "reason": "Context makes the phrase a subdued sarcastic complaint."
+    }
+  },
+  {
+    "id": "contextual-warning",
+    "input": {
+      "speaker": "target-speaker",
+      "text": "DOWN!",
+      "context": {
+        "strategy": "recent-messages",
+        "recentTurns": [
+          { "speaker": "participant-1", "text": "That hanging sign just snapped loose." },
+          { "speaker": "participant-2", "text": "It is falling toward us." }
+        ]
+      }
+    },
+    "output": {
+      "presentationId": "shout",
+      "confidence": 0.99,
+      "reason": "An urgent loud command responding to immediate danger."
+    }
+  },
+  {
+    "id": "contextual-sadness",
+    "input": {
+      "speaker": "target-speaker",
+      "text": "Keep the porch light on.",
+      "context": {
+        "strategy": "discussion-compaction",
+        "recentTurns": [
+          { "speaker": "participant-1", "text": "Should I switch everything off before bed?" }
+        ],
+        "discussions": [
+          {
+            "id": "memorial-dinner",
+            "summary": "The family is spending their first night after a sibling went missing and is preserving a familiar signal in case she returns.",
+            "participantSpeakers": ["target-speaker", "participant-1"],
+            "relevantToTarget": true
+          }
+        ]
+      }
+    },
+    "output": {
+      "presentationId": "sad",
+      "confidence": 0.96,
+      "reason": "The compacted discussion makes the request a vulnerable expression of grief."
+    }
+  },
+  {
+    "id": "contextual-grandiose",
+    "input": {
+      "speaker": "target-speaker",
+      "text": "Witness my ascent!",
+      "context": {
+        "strategy": "recent-messages",
+        "recentTurns": [
+          { "speaker": "participant-1", "text": "The self-proclaimed mountain king reached the summit." },
+          { "speaker": "participant-2", "text": "Deliver the victory speech, your majesty." }
+        ]
+      }
+    },
+    "output": {
+      "presentationId": "grandiose",
+      "confidence": 0.97,
+      "reason": "A deliberately theatrical declaration inside performative banter."
+    }
+  }
+]

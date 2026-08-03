@@ -1,0 +1,205 @@
+[
+  {
+    "id": "plain-neutral-plan",
+    "speaker": "target-speaker",
+    "text": "I'll handle it.",
+    "context": [
+      { "speaker": "participant-1", "text": "Can somebody reserve a table for six?" },
+      { "speaker": "target-speaker", "text": "I have the restaurant number." }
+    ],
+    "contrastGroup": "same-words-different-privacy",
+    "expectedPresentationId": "plain",
+    "notes": "Routine commitment in ordinary planning context."
+  },
+  {
+    "id": "plain-neutral-location",
+    "speaker": "target-speaker",
+    "text": "There it is.",
+    "context": [
+      { "speaker": "participant-1", "text": "Which shelf holds the blue dictionary?" },
+      { "speaker": "target-speaker", "text": "I am checking the reference section." }
+    ],
+    "contrastGroup": "same-words-different-discovery",
+    "expectedPresentationId": "plain",
+    "notes": "Neutral location confirmation without an expressive push."
+  },
+  {
+    "id": "whisper-private",
+    "speaker": "target-speaker",
+    "text": "I'll handle it.",
+    "context": [
+      { "speaker": "participant-1", "text": "No one else can know the key is missing." },
+      { "speaker": "target-speaker", "text": "Keep your voice down." }
+    ],
+    "contrastGroup": "same-words-different-privacy",
+    "expectedPresentationId": "whisper",
+    "notes": "The same commitment becomes private, cautious speech in secretive context."
+  },
+  {
+    "id": "whisper-gentle",
+    "speaker": "target-speaker",
+    "text": "You can rest. I'll stay right here.",
+    "context": [
+      { "speaker": "participant-1", "text": "I keep waking up every time the thunder hits." },
+      { "speaker": "target-speaker", "text": "You do not have to sit alone." }
+    ],
+    "expectedPresentationId": "whisper",
+    "notes": "Soft reassurance responding to fear without becoming sorrowful."
+  },
+  {
+    "id": "mutter-complaint",
+    "speaker": "target-speaker",
+    "text": "Of course the train is late again.",
+    "context": [
+      { "speaker": "participant-1", "text": "The board added another twenty minutes." },
+      { "speaker": "target-speaker", "text": "That is the third delay this week." }
+    ],
+    "expectedPresentationId": "mutter",
+    "notes": "A subdued recurring complaint in a frustrating travel exchange."
+  },
+  {
+    "id": "mutter-sarcasm",
+    "speaker": "target-speaker",
+    "text": "Perfect timing.",
+    "context": [
+      { "speaker": "participant-1", "text": "The last train just left." },
+      { "speaker": "target-speaker", "text": "And now it starts raining." }
+    ],
+    "expectedPresentationId": "mutter",
+    "notes": "Context disambiguates the short phrase as under-the-breath sarcasm."
+  },
+  {
+    "id": "exclaim-delight",
+    "speaker": "target-speaker",
+    "text": "You actually made it!",
+    "context": [
+      { "speaker": "participant-1", "text": "My bus broke down, but I ran the last six blocks." },
+      { "speaker": "target-speaker", "text": "I thought the doors would close first." }
+    ],
+    "expectedPresentationId": "exclaim",
+    "notes": "Bright delighted surprise at a friend's arrival."
+  },
+  {
+    "id": "exclaim-discovery",
+    "speaker": "target-speaker",
+    "text": "There it is.",
+    "context": [
+      { "speaker": "participant-1", "text": "Every booth says the concert is sold out." },
+      { "speaker": "target-speaker", "text": "Wait—the clerk is holding one envelope." },
+      { "speaker": "participant-1", "text": "Could that be the final ticket?" }
+    ],
+    "contrastGroup": "same-words-different-discovery",
+    "expectedPresentationId": "exclaim",
+    "notes": "The same words express an exciting discovery after a difficult search."
+  },
+  {
+    "id": "shout-warning",
+    "speaker": "target-speaker",
+    "text": "GET AWAY FROM THE DOOR!",
+    "context": [
+      { "speaker": "participant-1", "text": "Smoke is pouring through the frame." },
+      { "speaker": "participant-2", "text": "The handle is glowing red." }
+    ],
+    "expectedPresentationId": "shout",
+    "notes": "Urgent loud warning responding to immediate danger."
+  },
+  {
+    "id": "shout-call",
+    "speaker": "target-speaker",
+    "text": "EVERYONE, RUN!",
+    "context": [
+      { "speaker": "participant-1", "text": "The hillside is starting to move." },
+      { "speaker": "target-speaker", "text": "Do not wait for the bags." }
+    ],
+    "expectedPresentationId": "shout",
+    "notes": "Short explosive call to action in an emergency."
+  },
+  {
+    "id": "scribble-frantic",
+    "speaker": "target-speaker",
+    "text": "Wait—what if it's us?!",
+    "context": [
+      { "speaker": "participant-1", "text": "The footprints begin at our door and end here." },
+      { "speaker": "target-speaker", "text": "But nobody walked past the camera." }
+    ],
+    "expectedPresentationId": "scribble",
+    "notes": "A short frantic theory made coherent by the mystery context."
+  },
+  {
+    "id": "scribble-spiral",
+    "speaker": "target-speaker",
+    "text": "No no no, this loops!",
+    "context": [
+      { "speaker": "participant-1", "text": "This hallway returns us to the same clock." },
+      { "speaker": "target-speaker", "text": "I marked that wall five minutes ago." }
+    ],
+    "expectedPresentationId": "scribble",
+    "notes": "Visually chaotic realization within the compact shell limit."
+  },
+  {
+    "id": "announce-invitation",
+    "speaker": "target-speaker",
+    "text": "Club meeting starts at sunset!",
+    "context": [
+      { "speaker": "participant-1", "text": "People keep asking when the telescope session begins." },
+      { "speaker": "target-speaker", "text": "I will post the final time for everyone." }
+    ],
+    "expectedPresentationId": "announce",
+    "notes": "A public invitation stated to resolve group uncertainty."
+  },
+  {
+    "id": "announce-notice",
+    "speaker": "target-speaker",
+    "text": "Dinner is served in the courtyard.",
+    "context": [
+      { "speaker": "participant-1", "text": "Where should I send the guests?" },
+      { "speaker": "target-speaker", "text": "The cooks have finished setting every table." }
+    ],
+    "expectedPresentationId": "announce",
+    "notes": "Clear public notice directed to a group."
+  },
+  {
+    "id": "sad-disappointment",
+    "speaker": "target-speaker",
+    "text": "I really thought they would remember today.",
+    "context": [
+      { "speaker": "participant-1", "text": "Did anyone call for your birthday?" },
+      { "speaker": "target-speaker", "text": "The phone has been quiet all evening." }
+    ],
+    "expectedPresentationId": "sad",
+    "notes": "Personal disappointment and vulnerability established by the exchange."
+  },
+  {
+    "id": "sad-loss",
+    "speaker": "target-speaker",
+    "text": "Leave her chair there.",
+    "context": [
+      { "speaker": "participant-1", "text": "Should I clear the empty place setting?" },
+      { "speaker": "target-speaker", "text": "This is our first dinner since the funeral." }
+    ],
+    "expectedPresentationId": "sad",
+    "notes": "Context turns a practical request into a vulnerable expression of grief."
+  },
+  {
+    "id": "grandiose-declaration",
+    "speaker": "target-speaker",
+    "text": "BEHOLD MY GLORIOUS RETURN!",
+    "context": [
+      { "speaker": "participant-1", "text": "Our undefeated drama captain finally enters." },
+      { "speaker": "participant-2", "text": "Give us the entrance you rehearsed." }
+    ],
+    "expectedPresentationId": "grandiose",
+    "notes": "Deliberately theatrical declaration inside performative banter."
+  },
+  {
+    "id": "grandiose-triumph",
+    "speaker": "target-speaker",
+    "text": "DESTINY NOW KNOWS MY NAME!",
+    "context": [
+      { "speaker": "participant-1", "text": "You defeated the champion under the arena lights." },
+      { "speaker": "target-speaker", "text": "Then let the chroniclers record this night." }
+    ],
+    "expectedPresentationId": "grandiose",
+    "notes": "Operatic triumphant phrasing reinforced by staged heroic language."
+  }
+]

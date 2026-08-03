@@ -15,14 +15,19 @@ Continue work in `/Users/safwankamal/Desktop/Code/Kokoroe`. Read `AGENTS.md` and
 - The frontend milestone is saved in git as `fc68c65` (`Checkpoint manga chat frontend`).
 - Backend work has started with Next.js API routes:
   - `GET /api/rooms`
+  - `POST /api/rooms`
   - `GET /api/messages?roomId=<room-id>`
   - `POST /api/messages`
+  - `GET /api/members`
+  - `POST /api/members`
   - `POST /api/auth/login`
   - `POST /api/auth/register`
-  - `GET /api/auth/session?sessionId=<session-id>`
-  - `GET /api/profile?sessionId=<session-id>`
+  - `GET /api/auth/session`
+  - `POST /api/auth/logout`
+  - `GET /api/profile`
   - `PATCH /api/profile`
-- These routes currently use the existing seed/catalog data and a local `.data/kokoroe-dev-store.json` file. Treat this as the API contract and development bridge before adding durable database persistence and real authentication.
+  - `GET /api/health`
+- These routes use the existing seed/catalog data behind swappable JSON, SQLite, and Supabase adapters. Treat the API contract as the stable boundary while persistence evolves.
 - Auth routes create development sessions after credential checks. Account creation stores salted password hashes in the local dev store; login verifies those hashes.
 - Auth routes set an httpOnly `kokoroe_session` cookie. `GET /api/auth/session` restores from that cookie, and `POST /api/auth/logout` clears it and deletes the stored session.
 - The frontend login and chat composer now use the API layer. Login creates a dev session, room messages are loaded through `GET /api/messages`, and sent lines go through `POST /api/messages`.
@@ -30,6 +35,7 @@ Continue work in `/Users/safwankamal/Desktop/Code/Kokoroe`. Read `AGENTS.md` and
 - Message creation now requires a valid session and stores the selected room/avatar back onto the user profile. The displayed message author is the avatar identity, not arbitrary client-supplied text.
 - Database direction is documented in `docs/DATABASE.md`: keep JSON as the temporary dev adapter, then move to SQLite before a hosted database. The current JSON adapter lives under `app/stores/`; keep route handlers pointed at the domain API instead of a concrete database client.
 - `KOKOROE_STORE=sqlite` switches the backend to `.data/kokoroe-dev.sqlite`. The SQLite adapter stores relational rows for users, profiles, avatar selections, sessions, and messages while preserving the current state-shaped adapter contract.
+- `KOKOROE_STORE=supabase` switches the backend to hosted Supabase Postgres. Writes remain server-owned; the browser may subscribe to active-room message inserts through Supabase Realtime.
 
 ## Current Design State
 
@@ -47,6 +53,5 @@ Continue work in `/Users/safwankamal/Desktop/Code/Kokoroe`. Read `AGENTS.md` and
 
 ## Verification Baseline
 
-- `npm run typecheck`
-- `npm run build`
+- `npm run check`
 - Browser inspection at `http://localhost:3000/`

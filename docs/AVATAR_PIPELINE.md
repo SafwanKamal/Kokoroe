@@ -11,7 +11,7 @@ This pipeline handles approved portrait intake only. It does not generate images
 - `content/avatars/catalog.json`: runtime avatar metadata grouped by world id.
 - `public/avatars/<room-id>/<avatar-id>/portrait.png`: approved runtime portrait served by the app.
 - `scripts/add-avatar.mjs`: validated catalog and asset importer.
-- `docs/ReferenceImages/Character Profile/` or `docs/RerferenceImages/Avatars/`: optional reference/concept storage, never imported automatically.
+- `docs/ReferenceImages/Character Profile/` or `docs/ReferenceImages/Avatars/`: optional reference/concept storage, never imported automatically.
 
 Do not put contact sheets, multi-character previews, rejected generations, or prompt explorations under `public/avatars/`.
 
